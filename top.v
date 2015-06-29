@@ -8,16 +8,15 @@ module top(
 	 input rx
     );
 
-	reg cpu_reset_n;
 	wire rw;
-	wire dtack_n;
+	wire master_ack;
 
 	wire [15:0] master_write;
 	wire [15:0] master_read;
 	wire [31:0] master_addr;
 	wire uds_n;
 	wire lds_n;
-	wire [2:0] ipl_n;
+	wire [2:0] ipl_n = 3'b111;
 
 	TG68 cpu (
     .clk(clk), 
@@ -25,7 +24,7 @@ module top(
     .clkena_in(1'b1), 
     .data_in(master_read), 
     .IPL( ipl_n[2:0] ), 
-    .dtack(dtack && 1'b0), 
+    .dtack( ~master_ack ), 
     .addr(master_addr), 
     .data_out(master_write), 
     .as(), 
@@ -35,6 +34,27 @@ module top(
     .drive_data()
     );
 
+	wire [15:0] mem_write;
+	wire [15:0] mem_read;
+	wire [23:0] mem_addr;
+	wire [1:0] mem_ds;
+	
+	boot_device mem (
+    .clk(clk), 
+    .reset_n(reset_n), 
+    .data_write(mem_write), 
+    .data_read(mem_read), 
+    .addr(mem_addr), 
+    .ds(mem_ds), 
+    .rw(rw), 
+    .ack(mem_ack),
+	 .bootmode(bootmode)
+    );
+
+	wire [15:0] uart1_write;
+	wire [15:0] uart1_read;
+	wire [7:0] uart1_addr;
+	
 	uart uart1 (
     .clk(clk), 
     .reset_n(reset_n), 
@@ -44,14 +64,14 @@ module top(
     .data_read(uart1_read), 
     .addr(uart1_addr), 
     .ds(uart1_ds), 
-    .rw(uart1_rw), 
+    .rw(rw), 
     .ack(uart1_ack), 
     .tx_active(uart1_tx_active), 
     .rx_avail(uart1_rx_avail), 
     .rx_avail_clear_i(1'b0)
     );
 
-
+	
 	device_mux mux (
     .clk(clk), 
     .reset_n(reset_n), 
@@ -59,14 +79,14 @@ module top(
 	 .master_write(master_write), 
     .master_read(master_read), 
     .master_addr(master_addr), 
-    .master_ds( uds_n && lds_n ), 
-    .master_ack( dtack_n ), 
+    .master_ds( { ~uds_n, ~lds_n } ), 
+    .master_ack( master_ack ), 
 	 
-    .slave1_read(slave1_read), 
-    .slave1_write(slave1_write), 
-    .slave1_addr(slave1_addr), 
-    .slave1_ds(slave1_ds), 
-    .slave1_ack(slave1_ack), 
+    .slave1_read(mem_read), 
+    .slave1_write(mem_write), 
+    .slave1_addr(mem_addr), 
+    .slave1_ds(mem_ds), 
+    .slave1_ack(mem_ack), 
 
     .slave2_read(uart1_read), 
     .slave2_write(uart1_write), 
