@@ -34,10 +34,13 @@ module top(
     .drive_data()
     );
 
+	// n_uds = 0 --> Byte auf gerade Adresse, data[15:8]
+	// n_lds = 0 --> Byte auf ungerader Adresse, data[7:0]
+
 	wire [15:0] mem_write;
 	wire [15:0] mem_read;
 	wire [23:0] mem_addr;
-	wire [1:0] mem_ds;
+	wire mem_uds, mem_lds;
 	
 	boot_device mem (
     .clk(clk), 
@@ -45,7 +48,8 @@ module top(
     .data_write(mem_write), 
     .data_read(mem_read), 
     .addr(mem_addr), 
-    .ds(mem_ds), 
+    .uds(mem_uds), 
+	 .lds(mem_lds),
     .rw(rw), 
     .ack(mem_ack),
 	 .bootmode(bootmode)
@@ -54,6 +58,7 @@ module top(
 	wire [15:0] uart1_write;
 	wire [15:0] uart1_read;
 	wire [7:0] uart1_addr;
+	wire uart1_uds, uart1_lds;
 	
 	uart uart1 (
     .clk(clk), 
@@ -63,7 +68,8 @@ module top(
     .data_write(uart1_write), 
     .data_read(uart1_read), 
     .addr(uart1_addr), 
-    .ds(uart1_ds), 
+    .uds(uart1_uds), 
+	 .lds(uart1_lds), 
     .rw(rw), 
     .ack(uart1_ack), 
     .tx_active(uart1_tx_active), 
@@ -79,19 +85,22 @@ module top(
 	 .master_write(master_write), 
     .master_read(master_read), 
     .master_addr(master_addr), 
-    .master_ds( { ~uds_n, ~lds_n } ), 
+    .master_uds( ~uds_n ), 
+	 .master_lds( ~lds_n ), 
     .master_ack( master_ack ), 
 	 
     .slave1_read(mem_read), 
     .slave1_write(mem_write), 
     .slave1_addr(mem_addr), 
-    .slave1_ds(mem_ds), 
+    .slave1_uds(mem_uds), 
+	 .slave1_lds(mem_lds),
     .slave1_ack(mem_ack), 
 
     .slave2_read(uart1_read), 
     .slave2_write(uart1_write), 
     .slave2_addr(uart1_addr), 
-    .slave2_ds(uart1_ds), 
+    .slave2_uds(uart1_uds), 
+	 .slave2_lds(uart1_lds), 
     .slave2_ack(uart1_ack)
     );
 

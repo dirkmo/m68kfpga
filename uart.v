@@ -10,7 +10,8 @@ module uart(
 		input [15:0] data_write,
 		output reg [15:0] data_read,
 		input [7:0] addr,
-		input [1:0] ds,
+		input uds,
+		input lds,
 		input rw,
 		output reg ack,
 
@@ -35,25 +36,25 @@ always @(posedge clk) begin
 	end else
 	if( rw ) begin // read from uart
 		if( addr[7:0] == 8'd0 ) begin
-			if( ds[0] ) begin // 0: UART RXTX
+			if( uds ) begin // 0: UART RXTX
 				data_read[7:0] = rx_reg[7:0];
 				ack = 1'b1;
 			end
-			if( ds[1] ) begin // 1: UART STATUS
+			if( lds ) begin // 1: UART STATUS
 				data_read[7:0] = status[7:0];
 				ack = 1'b1;
 			end
 		end
 	end else begin // write to uart
 		if( addr[7:0] == 8'd0 ) begin
-			if( ds[0] ) begin // 0: UART RXTX
+			if( uds ) begin // 0: UART RXTX
 				if( tx_active == 0 ) begin
 					tx_reg[7:0] <= data_write[7:0];
 					tx_start <= 1;
 					ack = 1'b1;
 				end
 			end
-			if( ds[1] ) begin // 1: UART STATUS
+			if( lds ) begin // 1: UART STATUS
 				ack = 1'b1;
 			end
 		end // if( addr[7:0] == 8'd0 )

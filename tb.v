@@ -25,12 +25,12 @@ module tb;
 		// Initialize Inputs
 		clk = 0;
 		reset_n = 0;
-		rx = 0;
+		rx = 1;
 
 		#100;
 		reset_n = 1;
 		
-		#10000;
+		#15000;
 
 		$finish;
 	end

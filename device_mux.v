@@ -8,21 +8,24 @@ module device_mux(
 		input [15:0] master_write,
 		output [15:0] master_read,
 		input [31:0] master_addr,
-		input [1:0] master_ds,
+		input master_uds,
+		input master_lds,
 		output master_ack,
 		
 		// Slave #1 	RAM 16 MB
 		input [15:0] slave1_read,
 		output [15:0] slave1_write,
 		output [23:0] slave1_addr,
-		output [1:0] slave1_ds,
+		output slave1_uds,
+		output slave1_lds,
 		input slave1_ack,
 
 		// Slave #2		UART
 		input [15:0] slave2_read,
 		output [15:0] slave2_write,
 		output [7:0] slave2_addr,
-		output [1:0] slave2_ds,
+		output slave2_uds,
+		output slave2_lds,
 		input slave2_ack
     );
 
@@ -30,7 +33,7 @@ reg [3:0] slave_index;
 
 always @(*) begin
 	slave_index = 0;
-	if( master_ds[1:0] != 2'b00 ) begin
+	if( master_uds || master_lds ) begin
 		if( master_addr < 32'h100000 ) begin
 			slave_index = 1;
 		end else
@@ -56,7 +59,10 @@ assign slave2_write[15:0] = master_write[15:0];
 assign slave1_addr[23:0] = master_addr[23:0];
 assign slave2_addr[7:0]  = master_addr[7:0];
 
-assign slave1_ds = (slave_index == 1 ) ? master_ds : 2'b00;
-assign slave2_ds = (slave_index == 2 ) ? master_ds : 2'b00;
+assign slave1_uds = (slave_index == 1 ) ? master_uds : 1'b0;
+assign slave1_lds = (slave_index == 1 ) ? master_lds : 1'b0;
+
+assign slave2_uds = (slave_index == 2 ) ? master_uds : 1'b0;
+assign slave2_lds = (slave_index == 2 ) ? master_lds : 1'b0;
 
 endmodule
