@@ -12,27 +12,50 @@ module boot_device(
 		input rw,
 		output ack,
 		
-		output reg bootmode
+		output reg bootmode,
+		
+		// SRAM Signale
+		output [17:0] ram_addr,
+		input  [31:0] ram_data_read,
+		output [31:0] ram_data_write,
+		output ram_data_is_output,
+		output [1:0] ram_ce_n,
+		output [1:0] ram_ub_n,
+		output [1:0] ram_lb_n,
+		output [1:0] ram_we_n,
+		output [1:0] ram_oe_n
     );
 
-	wire [15:0] mem_read;
-	wire [23:0] mem_addr;
-	wire mem_ack;
+	wire [15:0] sram_read;
+	wire sram_ack;
+	wire sram_uds;
+	wire sram_lds;
+	wire sram_rw;
 	
 	reg [15:0] boot_read;
 	
-	memory mem (
-    .clk(clk),
-    .reset_n(reset_n),
-    .data_write(data_write),
-    .data_read(mem_read),
-    .addr(addr),
-    .uds(uds),
-	 .lds(lds),
-    .rw(rw),
-    .ack(mem_ack)
-    );
+	sram_if sram (
+    .clk(clk), 
+    .reset_n(reset_n), 
 	 
+    .data_write(data_write), 
+    .data_read(sram_read), 
+    .addr(addr[19:0]), 
+    .uds(sram_uds), 
+    .lds(sram_lds), 
+    .rw(rw), 
+    .ack(sram_ack), 
+	 
+    .ram_addr( ram_addr[17:0] ), 
+    .ram_data_read( ram_data_read[31:0] ), 
+    .ram_data_write( ram_data_write[31:0] ), 
+    .ram_data_is_output( ram_data_is_output ), 
+    .ram_ce_n( ram_ce_n[1:0] ), 
+    .ram_ub_n( ram_ub_n[1:0] ), 
+    .ram_lb_n( ram_lb_n[1:0] ), 
+    .ram_we_n( ram_we_n[1:0] ), 
+    .ram_oe_n( ram_oe_n[1:0] )
+   );
 
 	// n_uds = 0 --> Byte auf gerade Adresse, data[15:8]
 	// n_lds = 0 --> Byte auf ungerader Adresse, data[7:0]
@@ -40,13 +63,17 @@ module boot_device(
 	// Lesezugriff auf Adresse < 0x1000 liefert Bootstrapcode, sonst RAM-Zugriff 
 	wire bootmode_read = bootmode && (addr < 24'h1000);
 	
+	assign sram_uds = bootmode_read ? 1'b0 : uds;
+	assign sram_lds = bootmode_read ? 1'b0 : lds;
+	assign sram_rw  = bootmode_read ? 1'b1 : rw;
+	
 	assign data_read[7:0] =
-		bootmode_read ? boot_read[7:0] : mem_read[7:0];
+		bootmode_read ? boot_read[7:0] : sram_read[7:0];
 
 	assign data_read[15:8] =
-		bootmode_read ? boot_read[15:8] : mem_read[15:8];
+		bootmode_read ? boot_read[15:8] : sram_read[15:8];
 
-	assign ack = bootmode ? (uds || lds) : mem_ack;
+	assign ack = bootmode_read ? (uds || lds) : sram_ack;
 
 
 	wire bootmode_end_cmd = (addr[23:0] == 'd0) && uds && lds && (data_write[15:0] == 16'hA9A9) && (rw == 1'b0);
@@ -81,17 +108,8 @@ module boot_device(
 	always @(posedge clk) begin
 		boot_read[15:0] = 16'h0000;
 		if( bootmode ) begin
-			case( addr[23:0] )
-				24'h000000: boot_read[15:0] = 16'h0000;
-				24'h000002: boot_read[15:0] = 16'h2000;
-				24'h000004: boot_read[15:0] = 16'h0000;
-				24'h000006: boot_read[15:0] = 16'h0000;
-				24'h000008: boot_read[15:0] = 16'h13FC;
-				24'h00000A: boot_read[15:0] = 16'h0041;
-				24'h00000C: boot_read[15:0] = 16'h0010;
-				24'h00000E: boot_read[15:0] = 16'h0000;
-				24'h000000: boot_read[15:0] = 16'h4EFA;
-				24'h000010: boot_read[15:0] = 16'hFFF6;			
+			case( { addr[23:1], 1'b0 }  )
+`include "../sw/main.v"
 			endcase
 		end else begin
 		end

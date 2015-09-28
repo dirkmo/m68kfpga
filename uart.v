@@ -17,27 +17,32 @@ module uart(
 
 		output tx_active,
 		
-		output reg rx_avail,
+		output wire rx_avail,
 		input rx_avail_clear_i
     );
 
 reg [7:0] tx_reg;
 reg [7:0] rx_reg;
 reg tx_start;
+reg rx_is_being_read; // high when rx_reg is being read, for resetting rx_avail_flag in status[]
 
 wire [7:0] status;
 
+reg rx_avail_flag;
+assign rx_avail = rx_avail_flag;
 
 always @(posedge clk) begin
-	data_read[15:0] = 8'd0;
+	data_read[15:0] = 16'h0;
 	ack = 1'b0;
-	tx_start <= 0;
+	tx_start = 0;
+	rx_is_being_read = 1'b0;
 	if( ~reset_n ) begin
 	end else
 	if( rw ) begin // read from uart
-		if( addr[7:0] == 8'd0 ) begin
+		if( addr[7:1] == 7'd0 ) begin
 			if( uds ) begin // 0: UART RXTX
-				data_read[7:0] = rx_reg[7:0];
+				data_read[15:8] = rx_reg[7:0];
+				rx_is_being_read = 1'b1;
 				ack = 1'b1;
 			end
 			if( lds ) begin // 1: UART STATUS
@@ -46,11 +51,11 @@ always @(posedge clk) begin
 			end
 		end
 	end else begin // write to uart
-		if( addr[7:0] == 8'd0 ) begin
+		if( addr[7:1] == 7'd0 ) begin
 			if( uds ) begin // 0: UART RXTX
 				if( tx_active == 0 ) begin
-					tx_reg[7:0] <= data_write[7:0];
-					tx_start <= 1;
+					tx_reg[7:0] = data_write[15:8];
+					tx_start = 1;
 					ack = 1'b1;
 				end
 			end
@@ -170,14 +175,14 @@ end
 
 
 reg [3:0] state_rx;
+reg rx_avail_tick;
 
 always @(posedge clk) begin
 	state_rx <= state_rx;
-	rx_avail <= rx_avail;
 	baud_start <= 0;
+	rx_avail_tick <= 0;
 	if( ~reset_n ) begin
 		state_rx <= 0;
-		rx_avail <= 0;
 		rx_reg <= 0;
 	end else begin
 		case ( state_rx )
@@ -187,22 +192,18 @@ always @(posedge clk) begin
 					baud_start <= 1; // start des Stoppbits
 					state_rx <= 1;
 				end
-				if( rx_avail_clear_i ) begin
-					rx_avail <= 0;
-				end
 			end
 			1: // Start Bit
 			if( tick_rx ) begin
 				state_rx <= 2;
 				if(rx == 1) begin
-					state_rx <= 0; // Stoppbit nicht mehr 0, daher zurück in IDLE
+					state_rx <= 0; // Stoppbit nicht mehr 0, daher zurck in IDLE
 				end
 			end
 			2: // Bit 0
 			if( tick_rx ) begin
 				rx_reg[0] <= rx;
 				state_rx <= 3;
-				rx_avail <= 0;
 			end
 			3: // Bit 1
 			if( tick_rx ) begin
@@ -241,9 +242,8 @@ always @(posedge clk) begin
 			end
 			10: // Stoppbit
 			if( tick_rx ) begin
-				rx_avail <= 0;
 				if( rx == 1) begin
-					rx_avail <= 1; // Stoppbit ist da
+					rx_avail_tick <= 1; // Stoppbit ist da
 				end
 				state_rx <= 0;
 			end
@@ -251,6 +251,15 @@ always @(posedge clk) begin
 	end
 end
 
-assign status[7:0] = { 6'd0, tx_active, rx_avail };
+always @(posedge clk) begin
+	if( ~reset_n || rx_is_being_read || rx_avail_clear_i ) begin
+		rx_avail_flag <= 1'b0;
+	end else
+	if(rx_avail_tick==1'b1) begin
+		rx_avail_flag <= 1'b1;
+	end
+end
+
+assign status[7:0] = { 6'd0, tx_active, rx_avail_flag };
 
 endmodule

@@ -2,11 +2,22 @@
 
 
 module top(
-    input clk,
-	 input reset_n,
-	 output tx,
-	 input rx
-    );
+	input clk,
+	input reset_n,
+	output tx,
+	input rx,
+	
+	// SRAM Signale
+	output [17:0] ram_addr,
+	input  [31:0] ram_data_read,
+	output [31:0] ram_data_write,
+	output ram_data_is_output,
+	output [1:0] ram_ce_n,
+	output [1:0] ram_ub_n,
+	output [1:0] ram_lb_n,
+	output [1:0] ram_we_n,
+	output [1:0] ram_oe_n
+);
 
 	wire rw;
 	wire master_ack;
@@ -52,7 +63,18 @@ module top(
 	 .lds(mem_lds),
     .rw(rw), 
     .ack(mem_ack),
-	 .bootmode(bootmode)
+	 .bootmode(bootmode),
+	 
+	// SRAM Signale
+	 .ram_addr( ram_addr[17:0] ),
+	 .ram_data_read( ram_data_read[31:0] ),
+	 .ram_data_write( ram_data_write[31:0] ),
+	 .ram_data_is_output( ram_data_is_output ),
+	 .ram_ce_n( ram_ce_n[1:0] ),
+	 .ram_ub_n( ram_ub_n[1:0] ),
+	 .ram_lb_n( ram_lb_n[1:0] ),
+	 .ram_we_n( ram_we_n[1:0] ),
+	 .ram_oe_n( ram_oe_n[1:0] )
     );
 
 	wire [15:0] uart1_write;
@@ -105,5 +127,14 @@ module top(
     );
 
 
+	always @( posedge master_ack ) begin
+		if( ~uds_n || ~lds_n ) begin
+			if( rw ) begin
+				$display( "read $%06x: %04X, %d", master_addr, master_read, $time );
+			end else begin
+				$display( "writ $%06x: %04X, %d", master_addr, master_write, $time );
+			end
+		end
+	end
 
 endmodule
