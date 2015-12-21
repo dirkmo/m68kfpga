@@ -1,17 +1,13 @@
 #include "m68kdefs.h"
 
-//static const uint8_t str[] = "Hello, world!\n";
+static const uint8_t str[] = "Hello, world!\n";
 
 int main(void) {
-	uint8_t i = 'A';
+	uint16_t i;
 
-	UART_RXTX = i;
-	
-	i++;
-	UART_RXTX = i;
-	
-	i++;
-	UART_RXTX = i;
+	for( i = 0; i<sizeof(str)-1; i++) {
+		UART_RXTX = str[i];	
+	}
 	
 	BOOTMODE_END();
 }

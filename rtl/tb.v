@@ -100,20 +100,30 @@ module tb;
 	end
 	endtask
 
+	task clear_rams;
+	integer i;
+	begin
+		for ( i = 0; i < 'h3000; i = i+1 ) begin
+			mem0.mem[i] = 16'd0;
+			mem1.mem[i] = 16'd0;
+		end
+	end
+	endtask
+
 	initial begin
-		// Initialize Inputs
 		clk = 0;
 		reset_n = 0;
 		rx_avail_clear = 1;
 		uart_uds_reg = 0;
 		uart_lds_reg = 0;
+		//clear_rams();
 		#100;
 		rx_avail_clear = 0;
 		reset_n = 1;
 
 		while( 1 ) begin
 			while ( ~rx_avail ) #10;
-			$display("rx: %d", tbuart.rx_reg[7:0] );
+			$display("rx: %d (%c)", tbuart.rx_reg[7:0], tbuart.rx_reg[7:0] );
 			$stop;
 			//uart_putc( tbuart.rx_reg[7:0] + 8'd1 );
 			rx_avail_clear = 1; #10; rx_avail_clear = 0; #10;

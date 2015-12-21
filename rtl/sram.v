@@ -44,6 +44,7 @@ module sram_if(
 	// CPU Interface data read
 	reg data_read_done; // Daten aus RAM gelesen
 	wire read_access = ( rw && (uds || lds) );
+	// select upper or lower 16 bits for reading
 	assign data_read[15:0] = read_access ? ( ram_index ? data_read_from_ram[31:16] : data_read_from_ram[15:0] ) : 16'hX;
 	assign read_ack = data_read_done;
 
