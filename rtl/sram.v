@@ -110,7 +110,10 @@ module sram_if(
 					data_read_done <= 1;
 					state <= 'd2;
 				end
-				default:	state <= 'd2;
+				default:	begin
+					state <= 'd2;
+					$stop;
+				end
 			endcase
 		end else if ( write_access ) begin // Write access
 			ram_ce_n[1:0] <= write_ce_n[1:0];

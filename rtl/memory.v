@@ -43,11 +43,11 @@ module memory(
 			if( rw == 0 ) begin
 				if( lds_pe ) begin
 					mem[ addr ][7:0] <= data_write[7:0];
-					//display("%m: lowrite %06X: %02X", addr, data_write[7:0] );
+					$display("%m: lowrite %06X: %02X", addr, data_write[7:0] );
 				end
 				if( uds_pe ) begin
 					mem[ addr ][15:8] <= data_write[15:8];
-					//display("%m: hiwrite %06X: %02X", addr, data_write[15:8] );
+					$display("%m: hiwrite %06X: %02X", addr, data_write[15:8] );
 				end
 				if( uds_pe || lds_pe ) ack <= 1'b1;
 			end else if ( (rw == 1) && (uds || lds) ) begin

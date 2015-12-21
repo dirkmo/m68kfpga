@@ -109,7 +109,7 @@ module boot_device(
 		boot_read[15:0] = 16'h0000;
 		if( bootmode ) begin
 			case( { addr[23:1], 1'b0 }  )
-`include "../sw/main.v"
+`include "../src/helloworld.v"
 			endcase
 		end else begin
 		end

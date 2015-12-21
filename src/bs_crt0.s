@@ -1,5 +1,5 @@
 	.org 0
-	.global _main
+#	.global _main
 	.global _start
 	.text
 	.long 0x2000

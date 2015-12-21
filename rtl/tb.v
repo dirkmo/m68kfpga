@@ -80,7 +80,7 @@ module tb;
 		.ram_we_n(ram_we_n), 
 		.ram_oe_n(ram_oe_n)
 	);
-
+	
 	always #5 clk = ~clk;
 
 	always @(*) begin
@@ -101,14 +101,6 @@ module tb;
 	endtask
 
 	initial begin
-		#10;
-		while( ~reset_n ) #10;
-		uart_putc( 65 );
-		$stop;
-	end
-
-
-	initial begin
 		// Initialize Inputs
 		clk = 0;
 		reset_n = 0;
@@ -123,7 +115,7 @@ module tb;
 			while ( ~rx_avail ) #10;
 			$display("rx: %d", tbuart.rx_reg[7:0] );
 			$stop;
-			uart_putc( tbuart.rx_reg[7:0] + 8'd1 );
+			//uart_putc( tbuart.rx_reg[7:0] + 8'd1 );
 			rx_avail_clear = 1; #10; rx_avail_clear = 0; #10;
 		end
 	
