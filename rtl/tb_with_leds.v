@@ -1,18 +1,15 @@
 `timescale 1ns / 1ps
 
-module tb_with_uart;
+module tb_with_leds;
 
 	// Inputs
 	reg clk;
 	reg reset_n;
-	reg rx_avail_clear;
-	
-	wire rx;
+
 	wire [31:0] ram_data_read;
-	wire rx_avail;
-	
+
+
 	// Outputs
-	wire tx;
 	wire [17:0] ram_addr;
 	wire [31:0] ram_data_write;
 	wire ram_data_is_output;
@@ -44,32 +41,14 @@ module tb_with_uart;
 		.rw(ram_we_n[0])
    );
 	
-	reg [15:0] uart_tx_reg;
-	reg uart_uds_reg;
-	reg uart_lds_reg;
-	reg uart_rw;
-	wire uart_tx_active;
-	
-	uart tbuart (
-    .clk(clk), 
-    .reset_n(reset_n), 
-    .rx(tx), 
-    .tx(rx), 
-	 .addr(0),
-	 .rw(uart_rw),
-	 .uds(uart_uds_reg),
-	 .lds(uart_lds_reg),
-    .rx_avail(rx_avail), 
-	 .tx_active(uart_tx_active),
-    .rx_avail_clear_i(rx_avail_clear),
-	 .data_write(uart_tx_reg[15:0])
-    );
+	wire [7:0] leds;
 	
 	system uut (
 		.clk(clk), 
 		.reset_n(reset_n), 
-		.tx(tx), 
-		.rx(rx), 
+		//.tx(tx), 
+		//.rx(rx), 
+		.leds(leds),
 		.ram_addr(ram_addr), 
 		.ram_data_read(ram_data_read), 
 		.ram_data_write(ram_data_write), 
@@ -90,45 +69,25 @@ module tb_with_uart;
 		end
 	end		
 	
-	task uart_putc;
-	input [7:0] c;
-	begin
-		while( uart_tx_active ) #10;
-		uart_tx_reg[15:8] = c[7:0];
-		uart_uds_reg = 1'b1; #10;
-		uart_uds_reg = 1'b0; #10;
-	end
-	endtask
-
-	task clear_rams;
-	integer i;
-	begin
-		for ( i = 0; i < 'h3000; i = i+1 ) begin
-			mem0.mem[i] = 16'd0;
-			mem1.mem[i] = 16'd0;
-		end
-	end
-	endtask
-
+	integer leds_alt;
+	
 	initial begin
 		clk = 0;
 		reset_n = 0;
-		rx_avail_clear = 1;
-		uart_uds_reg = 0;
-		uart_lds_reg = 0;
-		//clear_rams();
-		#100;
-		rx_avail_clear = 0;
-		reset_n = 1;
 
-		while( 1 ) begin
-			while ( ~rx_avail ) #10;
-			$display("rx: %d (%c)", tbuart.rx_reg[7:0], tbuart.rx_reg[7:0] );
-			$stop;
-			//uart_putc( tbuart.rx_reg[7:0] + 8'd1 );
-			rx_avail_clear = 1; #10; rx_avail_clear = 0; #10;
+		#100;
+		reset_n = 1;
+		leds_alt = leds;
+		
+		while(1) begin
+			#10;
+			if ( leds != leds_alt ) begin
+				$display("%X", leds );
+				leds_alt = leds;
+				$stop;
+			end
 		end
-	
+
 		#100000;
 		$finish;
 	end

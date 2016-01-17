@@ -14,6 +14,12 @@ helloworld: bs_crt0.o helloworld.c
 	m68k-elf-objcopy -O binary -S helloworld helloworld.bin
 	../host/bin2verilog helloworld.bin > helloworld.v
 
+leds: bs_crt0.o leds.c
+	m68k-elf-gcc $(CFLAGS) $(INCS) -c leds.c -o leds.o
+	m68k-elf-ld -Map=main.map -nostartfiles -T link.ld bs_crt0.o leds.o -o leds
+	m68k-elf-objcopy -O binary -S leds leds.bin
+	../host/bin2verilog leds.bin > leds.v
+
 bs_crt0.o: bs_crt0.s
 	m68k-elf-as $(AFLAGS) $(INCS) bs_crt0.s -o bs_crt0.o
 

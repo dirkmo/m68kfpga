@@ -36,11 +36,6 @@ module sram_if(
 
 	assign ram_addr[17:0] = addr[19:2];
 
-	// data strobe positive edge detection
-	//reg uds_r, lds_r;
-	//always @(posedge clk) {uds_r, lds_r} <= {uds, lds};
-	//wire ds_pe = ( { uds_r, uds } == 2'b01 ) || ( { lds_r, lds } == 2'b01 );
-
 	// CPU Interface data read
 	reg data_read_done; // Daten aus RAM gelesen
 	wire read_access = ( rw && (uds || lds) );

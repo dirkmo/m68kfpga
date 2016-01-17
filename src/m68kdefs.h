@@ -15,5 +15,7 @@
 
 #define BOOTMODE_END() {BOOTMODE=BOOTMODE_CMD_END;}
 
+#define LEDS (*((volatile uint8_t*)0x100100))
+
 #endif
 

@@ -26,7 +26,15 @@ module device_mux(
 		output [7:0] slave2_addr,
 		output slave2_uds,
 		output slave2_lds,
-		input slave2_ack
+		input slave2_ack,
+		
+		// Slave #3		LEDs
+		input [15:0] slave3_read,
+		output [15:0] slave3_write,
+		output [7:0] slave3_addr,
+		output slave3_uds,
+		output slave3_lds,
+		input slave3_ack
     );
 
 reg [3:0] slave_index;
@@ -34,11 +42,17 @@ reg [3:0] slave_index;
 always @(*) begin
 	slave_index = 0;
 	if( master_uds || master_lds ) begin
+		// 0x000000 .. 0x0FFFFF Slave #1
 		if( master_addr < 32'h100000 ) begin
 			slave_index = 1;
 		end else
+		// 0x100000 .. 0x1000FF Slave #2
 		if( master_addr < 32'h100100 ) begin
 			slave_index = 2;
+		end else
+		// 0x100100 .. 0x1001FF Slave #3
+		if( master_addr < 32'h100200 ) begin
+			slave_index = 3;
 		end
 	end
 end
@@ -46,23 +60,30 @@ end
 assign master_read[15:0] =
 	(slave_index == 1 ) ? slave1_read[15:0] :
 	(slave_index == 2 ) ? slave2_read[15:0] :
+	(slave_index == 3 ) ? slave3_read[15:0] :
 		16'd0;
 
 assign master_ack =
 	(slave_index == 1 ) ? slave1_ack :
 	(slave_index == 2 ) ? slave2_ack :
+	(slave_index == 3 ) ? slave3_ack :
 		1'd0;
 
 assign slave1_write[15:0] = master_write[15:0];
 assign slave2_write[15:0] = master_write[15:0];
+assign slave3_write[15:0] = master_write[15:0];
 
 assign slave1_addr[23:0] = master_addr[23:0];
 assign slave2_addr[7:0]  = master_addr[7:0];
+assign slave3_addr[7:0]  = master_addr[7:0];
 
 assign slave1_uds = (slave_index == 1 ) ? master_uds : 1'b0;
 assign slave1_lds = (slave_index == 1 ) ? master_lds : 1'b0;
 
 assign slave2_uds = (slave_index == 2 ) ? master_uds : 1'b0;
 assign slave2_lds = (slave_index == 2 ) ? master_lds : 1'b0;
+
+assign slave3_uds = (slave_index == 3 ) ? master_uds : 1'b0;
+assign slave3_lds = (slave_index == 3 ) ? master_lds : 1'b0;
 
 endmodule
