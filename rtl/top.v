@@ -16,20 +16,17 @@ module top(
 	output [1:0] ram_ce_n,
 	output [1:0] ram_ub_n,
 	output [1:0] ram_lb_n,
-	output [1:0] ram_we_n,
-	output [1:0] ram_oe_n
+	output ram_we_n,
+	output ram_oe_n
 	);
 
-	localparam clk_div = 4;
-	
-	`define CLOG2(x) (x <= 2) ? 1 : (x <= 4) ? 2 : (x <= 8) ? 3 : (x <= 16) ? 4 : (x <= 32) ? 5 : (x <= 64) ? 6 : -1
-	
-	reg [`CLOG2(clk_div)-1:0] clk_r;
+
+	reg [12:0] clk_r;
 	always @(posedge fpga_clk) begin
 		clk_r <= clk_r + 1'b1;
 	end
 	
-	wire clk = clk_r[`CLOG2(clk_div)-1];
+	wire clk = clk_r[12];
 	
 	wire ram_data_is_output;
 	wire ram_data_write;
