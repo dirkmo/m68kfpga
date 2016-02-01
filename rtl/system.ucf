@@ -1,6 +1,6 @@
 Net fpga_clk PERIOD = 20000 ps;
 Net fpga_clk LOC=T9;
-Net reset_n LOC=l14;
+Net reset LOC=l14;
 
 Net ram_addr<0> LOC=l5;
 Net ram_addr<1> LOC=n3;

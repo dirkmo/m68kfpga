@@ -4,7 +4,7 @@
 
 module top(
    input fpga_clk, 
-   input reset_n, 
+   input reset, 
    
 	output tx, 
    input rx, 
@@ -20,18 +20,24 @@ module top(
 	output ram_oe_n
 	);
 
-
-	reg [12:0] clk_r;
+	wire reset_n = ~reset;
+	
+	reg [23:0] clk_r;
 	always @(posedge fpga_clk) begin
 		clk_r <= clk_r + 1'b1;
 	end
 	
-	wire clk = clk_r[12];
+	initial begin
+		clk_r <= 0;
+	end
+	
+	//wire clk = fpga_clk;
+	wire clk = clk_r[18];
 	
 	wire ram_data_is_output;
-	wire ram_data_write;
+	wire [31:0] ram_data_write;
 	
-	assign ram_data = ram_data_is_output ? ram_data_write : 32'hzzzzzzzz;
+	assign ram_data[31:0] = ram_data_is_output ? ram_data_write[31:0] : 32'hzzzzzzzz;
 
 	wire [1:0] complex_ram_we_n;
 	wire [1:0] complex_ram_oe_n;
@@ -55,7 +61,5 @@ module top(
 		 .ram_we_n(complex_ram_we_n), 
 		 .ram_oe_n(complex_ram_oe_n)
 		 );
-	 
-	 
-	
+
 endmodule
