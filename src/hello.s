@@ -9,7 +9,7 @@ _start:
     move.b #'a', 0x100000
     move.b #'l', 0x100000
     move.b #'l', 0x100000
-    move.b #'o', 0x100000
+	move.b #'o', 0x100000
 
 loop: jmp loop
     

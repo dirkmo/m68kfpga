@@ -1,5 +1,5 @@
-Net fpga_clk PERIOD = 20000 ps;
-Net fpga_clk LOC=T9;
+Net clk_50mhz PERIOD = 20000 ps;
+Net clk_50mhz LOC=T9;
 Net reset LOC=l14;
 
 Net ram_addr<0> LOC=l5;
@@ -72,3 +72,7 @@ Net leds<4> LOC=p13;
 Net leds<5> LOC=n12;
 Net leds<6> LOC=p12;
 Net leds<7> LOC=p11;
+
+Net uart_tx LOC=R13;
+Net uart_tx2 LOC=T14;
+Net uart_rx LOC=T13;

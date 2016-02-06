@@ -21,9 +21,43 @@ module uart(
 		input rx_avail_clear_i
     );
 
+reg tx_start;
+
+//----------------------------------------------------------
+// Baudratengenerator
+// 50 MHz
+// 115200 Baud
+// 50.000.000 / 115.200 = 434,03 -> 9 Bit
+//`define TICK50 434
+
+// 1,5625 MHz
+// 9600Baud
+// 1562500 / 9600 = 163 = 8 Bit
+//`define TICK 163
+
+
+`define TICK 9'd163
+
+
+reg [8:0] baud;
+
+wire tick = (baud[8:0] == `TICK);
+
+always @(posedge clk) begin
+	if(tx_start || tick) begin
+		baud <= 0;
+	end else begin
+		baud <= baud + 'd1;
+	end
+end
+
+
+//----------------------------------------------------------
+// Interface zum Systembus
+
+
 reg [7:0] tx_reg;
 reg [7:0] rx_reg;
-reg tx_start;
 reg rx_is_being_read; // high when rx_reg is being read, for resetting rx_avail_flag in status[]
 
 wire [7:0] status;
@@ -54,7 +88,7 @@ always @(posedge clk) begin
 		if( addr[7:1] == 7'd0 ) begin
 			if( uds ) begin // 0: UART RXTX
 				if( tx_active == 0 ) begin
-					tx_reg[7:0] = data_write[15:8];
+					//tx_reg[7:0] = data_write[15:8];
 					tx_start = 1;
 					ack = 1'b1;
 				end
@@ -67,25 +101,6 @@ always @(posedge clk) begin
 end
 
 
-//----------------------------------------------------------
-// Baudratengenerator
-// 50 MHz
-// 115200 Baud
-// 50.000.000 / 115.200 = 434,03 -> 9 Bit
-
-`define TICK 434
-
-reg [8:0] baud;
-
-wire tick = (baud[8:0] == `TICK);
-
-always @(posedge clk) begin
-	if(tx_start || tick) begin
-		baud <= 0;
-	end else begin
-		baud <= baud + 9'd1;
-	end
-end
 
 //----------------------------------------------------------
 // UART TX
@@ -97,60 +112,101 @@ assign tx_active = (state_tx != 0) || tx_start;
 
 always @(posedge clk) begin
 	state_tx <= state_tx;
+	tx <= tx;
 	if( ~reset_n ) begin
 		tx_reg <= 0;
 		state_tx <= 0;
 	end else begin
 		case (state_tx)
 			0: begin
+				tx <= 1;
+				state_tx <= 0;
 				if( tx_start ) begin // start bit
+					tx_reg[7:0] <= data_write[15:8];
 					tx <= 0;
 					state_tx <= 1;
 				end
 			end
-			1: if( tick ) begin
-				tx <= tx_reg[0];
-				state_tx <= 2;
-			end
-			2: if( tick ) begin
-				tx <= tx_reg[1];
-				state_tx <= 3;
-			end
-			3: if( tick ) begin
-				tx <= tx_reg[2];
-				state_tx <= 4;
-			end
-			4: if( tick ) begin
-				tx <= tx_reg[3];
-				state_tx <= 5;
-			end
-			5: if( tick ) begin
-				tx <= tx_reg[4];
-				state_tx <= 6;
-			end
-			6: if( tick ) begin
-				tx <= tx_reg[5];
-				state_tx <= 7;
-			end
-			7: if( tick ) begin
-				tx <= tx_reg[6];
-				state_tx <= 8;
-			end
-			8: if( tick ) begin
-				tx <= tx_reg[7];
-				state_tx <= 9;
-			end
-			9: if( tick ) begin
+			1: begin
+					tx <= 0;
+					if( tick ) begin
+						tx <= tx_reg[0];
+						state_tx <= 2;
+					end
+				end
+			2: begin
+					tx <= tx_reg[0];
+					if( tick ) begin
+						tx <= tx_reg[1];
+						state_tx <= 3;
+					end
+				end
+			3: begin
+					tx <= tx_reg[1];
+					if( tick ) begin
+						tx <= tx_reg[2];
+						state_tx <= 4;
+					end
+				end
+			4: begin
+					tx <= tx_reg[2];
+					if( tick ) begin
+						tx <= tx_reg[3];
+						state_tx <= 5;
+					end
+				end
+			5: begin
+					tx <= tx_reg[3];
+					if( tick ) begin
+						tx <= tx_reg[4];
+						state_tx <= 6;
+					end
+				end
+			6: begin
+					tx <= tx_reg[4];
+					if( tick ) begin
+						tx <= tx_reg[5];
+						state_tx <= 7;
+					end
+				end
+			7: begin
+					tx <= tx_reg[5];
+					if( tick ) begin
+						tx <= tx_reg[6];
+						state_tx <= 8;
+					end
+				end
+			8: begin
+					tx <= tx_reg[6];
+					if( tick ) begin
+						tx <= tx_reg[7];
+						state_tx <= 9;
+					end
+				end
+			9: begin
+					tx <= tx_reg[7];
+					if( tick ) begin
+						tx <= 1;
+						state_tx <= 10;
+					end
+				end
+			10: begin
+					tx <= 1;
+					if( tick ) begin
+						tx <= 1;
+						state_tx <= 11;
+					end
+				end
+			11: begin
 				tx <= 1;
-				state_tx <= 10;
+				if( tick ) begin
+					state_tx <= 0;
+				end
 			end
-			10: if( tick ) begin
-				tx <= 1;
-				state_tx <= 11;
-			end
-			11: if( tick ) begin
-				state_tx <= 0;
-			end
+			default: begin
+					state_tx <= 0;
+					tx <= 1;
+				end
 		endcase
 	end
 end

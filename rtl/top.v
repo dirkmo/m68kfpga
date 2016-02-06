@@ -3,11 +3,13 @@
 // top cell for Digilent Spartan 3 Starter Kit
 
 module top(
-   input fpga_clk, 
+   input clk_50mhz, 
    input reset, 
    
-	output tx, 
-   input rx, 
+	output uart_tx, 
+   input uart_rx, 
+	
+	output uart_tx2,
 	
 	output [7:0] leds,
 	 
@@ -22,8 +24,9 @@ module top(
 
 	wire reset_n = ~reset;
 	
+	
 	reg [23:0] clk_r;
-	always @(posedge fpga_clk) begin
+	always @(posedge clk_50mhz) begin
 		clk_r <= clk_r + 1'b1;
 	end
 	
@@ -31,8 +34,16 @@ module top(
 		clk_r <= 0;
 	end
 	
-	//wire clk = fpga_clk;
-	wire clk = clk_r[18];
+	/*
+	wire clk = fpga_clk;
+	wire clk = clk_r[0]; // 2^1 = 25 MHz
+	wire clk = clk_r[1]; // 2^2 = 12,5 MHz
+	wire clk = clk_r[2]; // 2^3 = 6,25 MHz
+	wire clk = clk_r[3]; // 2^4 = 3,125 MHz
+	*/
+	wire clk = clk_r[4]; // 2^5 = 32 -> 1,5625 MHz
+	
+	assign uart_tx2 = uart_tx;
 	
 	wire ram_data_is_output;
 	wire [31:0] ram_data_write;
@@ -48,9 +59,9 @@ module top(
 	system computer (
 		 .clk(clk), 
 		 .reset_n(reset_n), 
-		 .tx(tx), 
-		 .rx(rx), 
-		 .leds(leds),
+		 .tx(uart_tx), 
+		 .rx(uart_rx), 
+		 .leds(leds[7:0]),
 		 .ram_addr(ram_addr), 
 		 .ram_data_read(ram_data), 
 		 .ram_data_write(ram_data_write), 
