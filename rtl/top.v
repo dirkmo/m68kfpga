@@ -40,9 +40,9 @@ module top(
 	wire clk = clk_r[1]; // 2^2 = 12,5 MHz
 	wire clk = clk_r[2]; // 2^3 = 6,25 MHz
 	wire clk = clk_r[3]; // 2^4 = 3,125 MHz
-	*/
 	wire clk = clk_r[4]; // 2^5 = 32 -> 1,5625 MHz
-	
+	*/	
+	wire clk = clk_r[0]; // 2^1 = 25 MHz
 	assign uart_tx2 = uart_tx;
 	
 	wire ram_data_is_output;

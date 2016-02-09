@@ -1,23 +1,36 @@
-#include <stdint.h>
+#include "m68kdefs.h"
 
-
-//assign status[7:0] = { 6'd0, tx_active, rx_avail };
-
-#define UART_MASK_RXAVAIL 1
-#define UART_MASK_TXACTIVE 2
-
-volatile uint8_t *UART_RXTX = (uint8_t*)0x100000;
-volatile uint8_t *UART_STAT = (uint8_t*)0x100001;
-volatile uint16_t *BOOTMODE = (uint16_t*)0;
-
+void putstr(const char *str) {
+	while(*str) {
+		UART_RXTX = *str++;	
+	}
+}
 
 int main(void) {
+	putstr("\x1B[2J\x1B[1;1Hm68kfpga system\n");
+	char buf[100];
+	int i = 0;
 	while(1) {
-		if( (*UART_STAT) & UART_MASK_RXAVAIL ) {
-			char c = *UART_RXTX;
-			*UART_RXTX = c;
+		if ( i == 0 ) {
+			putstr("Text eingeben: ");
+		}
+		if( UART_STAT & UART_MASK_RXAVAIL ) {
+			if( i < 98 ) {
+				buf[i] = UART_RXTX;
+				UART_RXTX = buf[i];
+				if( buf[i] == '\r' ) {
+					buf[i+1] = '\n';
+					buf[i+2] = '\0';
+					i = 0;
+					putstr("\nEs wurde eingegeben: ");
+					putstr( buf );
+				} else {
+					i++;
+				}
+			}
+			
 		}
 	}
-	*BOOTMODE = 0xA9A9;
 	return 0;
 }
+

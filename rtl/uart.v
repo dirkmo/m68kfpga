@@ -35,8 +35,11 @@ reg tx_start;
 // 1562500 / 9600 = 163 = 8 Bit
 //`define TICK 163
 
+// 25 MHz
+// 115200 Baud
+// 25.000.000 / 115200 = 217
 
-`define TICK 9'd163
+`define TICK 9'd217
 
 
 reg [8:0] baud;
@@ -55,10 +58,12 @@ end
 //----------------------------------------------------------
 // Interface zum Systembus
 
-
 reg [7:0] tx_reg;
-reg [7:0] rx_reg;
 reg rx_is_being_read; // high when rx_reg is being read, for resetting rx_avail_flag in status[]
+reg status_is_being_read; // for resetting overflow flag in status[]
+
+wire [7:0] fifo_out;
+reg fifo_pop;
 
 wire [7:0] status;
 
@@ -70,17 +75,21 @@ always @(posedge clk) begin
 	ack = 1'b0;
 	tx_start = 0;
 	rx_is_being_read = 1'b0;
+	status_is_being_read = 1'b0;
+	fifo_pop = 1'b0;
 	if( ~reset_n ) begin
 	end else
 	if( rw ) begin // read from uart
 		if( addr[7:1] == 7'd0 ) begin
 			if( uds ) begin // 0: UART RXTX
-				data_read[15:8] = rx_reg[7:0];
+				data_read[15:8] = fifo_out[7:0];
 				rx_is_being_read = 1'b1;
+				fifo_pop = 1;
 				ack = 1'b1;
 			end
 			if( lds ) begin // 1: UART STATUS
 				data_read[7:0] = status[7:0];
+				status_is_being_read = 1'b1;
 				ack = 1'b1;
 			end
 		end
@@ -214,9 +223,9 @@ end
 //----------------------------------------------------------
 // UART RX
 
-
 reg [8:0] baud_rx;
 reg baud_start;
+reg rx_overflow_flag;
 
 wire baud_reset = (baud_rx[8:0] == `TICK);
 wire tick_rx = (baud_rx[8:0] == `TICK/2);
@@ -232,6 +241,7 @@ end
 
 reg [3:0] state_rx;
 reg rx_avail_tick;
+reg [7:0] rx_reg;
 
 always @(posedge clk) begin
 	state_rx <= state_rx;
@@ -303,9 +313,13 @@ always @(posedge clk) begin
 				end
 				state_rx <= 0;
 			end
+			default: state_rx <= 0;
 		endcase
 	end
 end
+
+wire fifo_empty;
+wire fifo_full;
 
 always @(posedge clk) begin
 	if( ~reset_n || rx_is_being_read || rx_avail_clear_i ) begin
@@ -316,6 +330,27 @@ always @(posedge clk) begin
 	end
 end
 
-assign status[7:0] = { 6'd0, tx_active, rx_avail_flag };
+always @(posedge clk) begin
+	if( ~reset_n || status_is_being_read ) begin
+		rx_overflow_flag <= 0;
+	end else
+	if( rx_avail_tick && fifo_full ) begin
+		rx_overflow_flag <= 1;
+	end
+end
+
+fifo fifo_rx (
+    .clk(clk), 
+    .reset_n(reset_n), 
+    .data_in(rx_reg), 
+    .data_out(fifo_out), 
+    .push(rx_avail_tick), 
+    .pop(fifo_pop), 
+    .empty(fifo_empty), 
+    .full(fifo_full)
+);
+
+
+assign status[7:0] = { 5'd0, rx_overflow_flag, tx_active, ~fifo_empty };
 
 endmodule

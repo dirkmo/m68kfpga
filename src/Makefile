@@ -1,6 +1,6 @@
 INCS = -I/opt/m68k/m68k-elf/include/
-LIBS = -L/opt/m68k/m68k-elf/lib/ -L/opt/m68k/lib/gcc/m68k-elf/5.2.0/m68000
-CFLAGS = -m68000 -o0 -fomit-frame-pointer
+LIBS = -L /opt/m68k/m68k-elf/lib/m68000 -L /opt/m68k/lib/gcc/m68k-elf/5.2.0/m68000
+CFLAGS = -m68000 -o0 -fomit-frame-pointer -fno-builtin
 AFLAGS = -m68000
 
 all: bs_crt0.o main.o
@@ -20,18 +20,27 @@ leds: bs_crt0.o leds.c
 	m68k-elf-objcopy -O binary -S leds leds.bin
 	../host/bin2verilog leds.bin > leds.v
 
+bootstrap: bootstrap.c bs_crt0.o uart.o
+	m68k-elf-gcc $(CFLAGS) $(INCS) -c bootstrap.c -o bootstrap.o
+	m68k-elf-ld $(LIBS) -Map=main.map -nostartfiles -T link.ld bs_crt0.o bootstrap.o uart.o -lc -o bootstrap
+	m68k-elf-objcopy -O binary -S bootstrap bootstrap.bin
+	../host/bin2verilog bootstrap.bin > bootstrap.v
+
+
 bs_crt0.o: bs_crt0.s
 	m68k-elf-as $(AFLAGS) $(INCS) bs_crt0.s -o bs_crt0.o
 
 crt0.o: crt0.s
 	m68k-elf-as crt0.s $(AFLAGS) -o crt0.o
 
+uart.o: uart.c
+	m68k-elf-gcc $(CFLAGS) $(INCS) -c uart.c -o uart.o
 	
 main.o: main.c
 	m68k-elf-gcc $(CFLAGS) $(INCS) -c main.c -o main.o
 
 clean:
-	rm -f main main.o bs_crt0.o crt0.o helloworld.o helloworld
+	rm -f main helloworld bootstrap *.o
 
 bin:
 	m68k-elf-objcopy -O srec -S main main.hex
