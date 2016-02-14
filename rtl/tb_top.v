@@ -98,6 +98,29 @@ module tb_top;
 		resetzeit = 1;
 	end
 	
+	task uart_putc;
+	input [7:0] c;
+	begin
+		while( uart_tx_active ) #10;
+		uart_tx_reg[15:8] = c[7:0];
+		uart_rw = 0;
+		uart_uds_reg = 1'b1; #10;
+		@(posedge uut.computer.clk); #10;
+		uart_uds_reg = 1'b0;
+		uart_rw = 1;
+	end
+	endtask
+	
+	initial begin
+		#100;
+		while(resetzeit==0) #1;
+		#100;
+		uart_putc(65);
+		uart_putc(66);
+		uart_putc(67);
+		uart_putc(68);
+		uart_putc(69);
+	end
 	
 	initial begin
 		// Initialize Inputs
@@ -108,8 +131,7 @@ module tb_top;
 		uart_uds_reg = 0;
 		uart_lds_reg = 0;
 		uart_rw = 1;
-		// Wait 100 ns for global reset to finish
-		#1000;
+
 		
 		while(resetzeit == 0) #1;
 		

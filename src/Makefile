@@ -1,6 +1,6 @@
 INCS = -I/opt/m68k/m68k-elf/include/
 LIBS = -L /opt/m68k/m68k-elf/lib/m68000 -L /opt/m68k/lib/gcc/m68k-elf/5.2.0/m68000
-CFLAGS = -m68000 -o0 -fomit-frame-pointer -fno-builtin
+CFLAGS = -m68000 -os -fomit-frame-pointer -fno-builtin
 AFLAGS = -m68000
 
 all: bs_crt0.o main.o
@@ -25,6 +25,18 @@ bootstrap: bootstrap.c bs_crt0.o uart.o
 	m68k-elf-ld $(LIBS) -Map=main.map -nostartfiles -T link.ld bs_crt0.o bootstrap.o uart.o -lc -o bootstrap
 	m68k-elf-objcopy -O binary -S bootstrap bootstrap.bin
 	../host/bin2verilog bootstrap.bin > bootstrap.v
+
+test: test.c bs_crt0.o
+	m68k-elf-gcc $(CFLAGS) $(INCS) -c test.c -o test.o
+	m68k-elf-ld $(LIBS) -nostartfiles -T link.ld bs_crt0.o test.o -o test
+	m68k-elf-objcopy -O binary -S test test.bin
+	../host/bin2verilog test.bin > test.v
+
+userprog: userprog.c uart.o crt0.o
+	m68k-elf-gcc $(CFLAGS) $(INCS) -fpic -c userprog.c -o userprog.o
+	m68k-elf-ld $(LIBS) -nostartfiles -T link_userprog.ld crt0.o uart.o userprog.o -lc -o userprog
+	m68k-elf-objcopy -O srec -S userprog userprog.hex
+
 
 
 bs_crt0.o: bs_crt0.s
