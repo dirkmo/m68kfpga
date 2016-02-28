@@ -17,5 +17,14 @@
 
 #define LEDS (*((volatile uint8_t*)0x100100))
 
+#define SPI_RXTX (*((volatile uint8_t*)0x100200))
+#define SPI_CTRL (*((volatile uint8_t*)0x100201))
+
+#define SPI_CTRL_MASK_BUSY 1
+
+#define SPI_CTRL_MASK_CS1 (1<<4)
+#define SPI_CTRL_MASK_CS2 (2<<4)
+#define SPI_CTRL_MASK_CS3 (3<<4)
+
 #endif
 

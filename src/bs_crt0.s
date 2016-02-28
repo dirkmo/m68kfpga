@@ -1,7 +1,7 @@
 	.org 0
 	.global _start
 	.text
-	.long 0x2000
+	.long 0x100000
 	.long _start
 
 .extern __bss_start
@@ -36,5 +36,11 @@
 
 	
 				jsr main
-			
+				
+			    move.b #'H', 0x100000
+				move.b #'a', 0x100000
+				move.b #'l', 0x100000
+				move.b #'t', 0x100000
+				move.b #'.', 0x100000
+				
 	loop:		jmp loop

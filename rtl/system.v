@@ -21,7 +21,13 @@ module system(
 	output [1:0] ram_ub_n,
 	output [1:0] ram_lb_n,
 	output [1:0] ram_we_n,
-	output [1:0] ram_oe_n
+	output [1:0] ram_oe_n,
+	
+	// SPI
+	input spi_miso,
+	output spi_mosi,
+	output spi_clk,
+	output [2:0] spi_cs_n
 );
 
 	wire rw;
@@ -87,7 +93,8 @@ module system(
 	wire [7:0] uart1_addr;
 	wire uart1_uds, uart1_lds;
 	
-	uart uart1 (
+	uart #(.SYS_CLK('d12_500_000),.BAUDRATE('d115200)) uart1
+	(
     .clk(clk), 
     .reset_n(reset_n), 
     .rx(rx), 
@@ -122,6 +129,29 @@ module system(
 	 .leds(leds)
 	 );
 	
+	wire [15:0] spi_write;
+	wire [15:0] spi_read;
+	wire [7:0] spi_addr;
+	wire spi_uds, spi_lds;
+	
+	spi spi1 (
+    .clk(clk), 
+    .reset_n(reset_n), 
+    .data_write(spi_write), 
+    .data_read(spi_read), 
+    .addr(spi_addr), 
+    .uds(spi_uds), 
+    .lds(spi_lds), 
+    .rw(rw), 
+    .ack(spi_ack), 
+    .spi_mosi(spi_mosi), 
+    .spi_clk(spi_clk), 
+    .spi_miso(spi_miso), 
+    .spi_cs_n(spi_cs_n),
+    .spi_active(spi_active)
+    );
+
+	
 	device_mux mux (
     .clk(clk), 
     .reset_n(reset_n), 
@@ -152,7 +182,15 @@ module system(
     .slave3_addr(leds_addr), 
     .slave3_uds(leds_uds), 
 	 .slave3_lds(leds_lds), 
-    .slave3_ack(leds_ack)
+    .slave3_ack(leds_ack),
+
+    .slave4_read(spi_read), 
+    .slave4_write(spi_write), 
+    .slave4_addr(spi_addr), 
+    .slave4_uds(spi_uds), 
+	 .slave4_lds(spi_lds), 
+    .slave4_ack(spi_ack)	 
+	 
     );
 
 

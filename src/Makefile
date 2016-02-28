@@ -32,8 +32,19 @@ test: test.c bs_crt0.o
 	m68k-elf-objcopy -O binary -S test test.bin
 	../host/bin2verilog test.bin > test.v
 
+spitest: spitest.c bs_crt0.o
+	m68k-elf-gcc $(CFLAGS) $(INCS) -c spitest.c -o spitest.o
+	m68k-elf-ld $(LIBS) -nostartfiles -T link.ld bs_crt0.o spitest.o -o spitest
+	m68k-elf-objcopy -O binary -S spitest spitest.bin
+	../host/bin2verilog spitest.bin > spitest.v
+
+flash: flash.c uart.o crt0.o
+	m68k-elf-gcc $(CFLAGS) $(INCS) -c flash.c -o flash.o
+	m68k-elf-ld $(LIBS) -nostartfiles -T link_userprog.ld crt0.o uart.o flash.o -lc -Map=flash.map -o flash 
+	m68k-elf-objcopy -O srec -S flash flash.hex
+
 userprog: userprog.c uart.o crt0.o
-	m68k-elf-gcc $(CFLAGS) $(INCS) -fpic -c userprog.c -o userprog.o
+	m68k-elf-gcc $(CFLAGS) $(INCS) -c userprog.c -o userprog.o
 	m68k-elf-ld $(LIBS) -nostartfiles -T link_userprog.ld crt0.o uart.o userprog.o -lc -o userprog
 	m68k-elf-objcopy -O srec -S userprog userprog.hex
 

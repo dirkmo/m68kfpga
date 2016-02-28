@@ -74,5 +74,11 @@ Net leds<6> LOC=p12;
 Net leds<7> LOC=p11;
 
 Net uart_tx LOC=R13;
-Net uart_tx2 LOC=T14;
 Net uart_rx LOC=T13;
+
+Net spi_miso LOC=F15;
+Net spi_mosi LOC=G16;
+Net spi_clk LOC=D15;
+Net spi_cs_n<0> LOC=E15;
+Net spi_cs_n<1> LOC=H16;
+Net spi_cs_n<2> LOC=K16;

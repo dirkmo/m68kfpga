@@ -2,8 +2,19 @@
 
 import sys
 import serial
+import time
 
 #--------------------------------------------------------------------------
+
+def openserial():
+	global port
+	try:
+		port = serial.Serial(sys.argv[2], baudrate=115200, timeout=0.3, stopbits=2)
+	except Exception:
+		print "Cannot open port '" + sys.argv[2] + "'"
+		sys.exit(3)
+
+
 def sendrecord(record):
 #	sys.stdout.write("'"+record+"'\n")
 	port.write(record+"\n")
@@ -24,29 +35,24 @@ except Exception:
 	print "Cannot open file '" + sys.argv[1] + "'"
 	sys.exit(2)
 
-try:
-	port = serial.Serial(sys.argv[2], baudrate=115200, timeout=0.3)
-except Exception:
-	print "Cannot open port '" + sys.argv[2] + "'"
-	sys.exit(3)
-
+openserial()
 
 linecount = 0
 retry = 0
 while True:
-	linecount = linecount + 1
-	srec = f.readline()
+	if retry == 0:
+		linecount = linecount + 1
+		srec = f.readline()
 	if not srec: break
+	if retry == 0: sys.stdout.write( "\r" + str(linecount) + ": ")
+	sys.stdout.flush()
 #	sys.stdout.write(srec)
 	if srec[0] != 'S': break
 	if sendrecord( srec.strip() ) == 0:
-		if retry>2:
-			print "Error sending line " + str(linecount)
-		else:
-			retry = retry + 1
-	else:
-		retry = 0
+		port.write("\n\n\n\n\n\n")
+		port.read(port.inWaiting())
 
 f.close()
 port.close()
 
+print "done."

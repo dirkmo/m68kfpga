@@ -21,6 +21,9 @@ module uart(
 		input rx_avail_clear_i
     );
 
+parameter SYS_CLK = 'd25_000_000;
+parameter BAUDRATE = 'd115200;
+
 reg tx_start;
 
 //----------------------------------------------------------
@@ -28,7 +31,7 @@ reg tx_start;
 // 50 MHz
 // 115200 Baud
 // 50.000.000 / 115.200 = 434,03 -> 9 Bit
-//`define TICK50 434
+//`define TICK 434
 
 // 1,5625 MHz
 // 9600Baud
@@ -38,9 +41,20 @@ reg tx_start;
 // 25 MHz
 // 115200 Baud
 // 25.000.000 / 115200 = 217
+//`define TICK 9'd217
 
-`define TICK 9'd217
+// 20 MHz
+// 115200 Baud
+// 20.000.000 / 115200 = 174
+//`define TICK 9'd174
 
+// 12,5 MHz
+// 115200 Baud
+// 12.500.000 / 115200 = 
+//`define TICK 9'd109
+
+
+`define TICK (SYS_CLK/BAUDRATE)
 
 reg [8:0] baud;
 
@@ -97,7 +111,6 @@ always @(posedge clk) begin
 		if( addr[7:1] == 7'd0 ) begin
 			if( uds ) begin // 0: UART RXTX
 				if( tx_active == 0 ) begin
-					//tx_reg[7:0] = data_write[15:8];
 					tx_start = 1;
 					ack = 1'b1;
 				end

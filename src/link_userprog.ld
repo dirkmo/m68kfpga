@@ -1,4 +1,4 @@
-/* Bootstrap program linker script */
+/* application linker script */
 
 ENTRY(_start)
 
@@ -9,33 +9,24 @@ MEMORY
 
 SECTIONS
 {
-	. = 0x4000;
 	.text : {
-		*(.text .text.*)
-		. = ALIGN(0x4);
-		*(.rodata .rodata.*)
-		. = ALIGN(0x4);
-		_etext = .;
-		*(.lit)
+		*(.text)
 	} > ram
 
-  .data :
-  {
-    *(.got.plt) *(.got)
-    *(.shdata)
-    *(.data .data.*)
-    _edata = .;
-  } > ram
+	.data :
+	{
+		. = ALIGN(0x4);
+		*(.rodata)
+		. = ALIGN(0x4);
+		*(.data)
+	} > ram
 
-  .bss :
-  {
-    . = ALIGN(0x4);
-    __bss_start = . ;
-    *(.shbss)
-    *(.bss .bss.*)
-    *(COMMON)
-    . = . + 4;
-    __bss_end = ALIGN (0x8);
-  } > ram
-
+	.bss :
+	{
+		. = ALIGN(0x4);
+		__bss_start = . ;
+		*(.bss)
+		. = . + 4;
+		__bss_end = ALIGN (0x4);
+	} > ram
 }

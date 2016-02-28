@@ -5,6 +5,7 @@ module tb_top;
 	// Inputs
 	reg fpga_clk;
 	reg reset;
+	reg spi_miso;
 
 	// Outputs
 	wire uart_tx;
@@ -16,6 +17,9 @@ module tb_top;
 	wire [1:0] ram_lb_n;
 	wire ram_we_n;
 	wire ram_oe_n;
+	wire spi_mosi;
+	wire spi_clk;
+	wire [2:0] spi_cs_n;
 
 	// Bidirs
 	wire [31:0] ram_data;
@@ -33,7 +37,11 @@ module tb_top;
 		.ram_ub_n(ram_ub_n), 
 		.ram_lb_n(ram_lb_n), 
 		.ram_we_n(ram_we_n), 
-		.ram_oe_n(ram_oe_n)
+		.ram_oe_n(ram_oe_n),
+		.spi_miso(spi_miso),
+		.spi_mosi(spi_mosi),
+		.spi_clk(spi_clk),
+		.spi_cs_n(spi_cs_n)
 	);
 	
 	wire [31:0] ram_data_read;
@@ -110,7 +118,7 @@ module tb_top;
 		uart_rw = 1;
 	end
 	endtask
-	
+
 	initial begin
 		#100;
 		while(resetzeit==0) #1;
@@ -137,6 +145,9 @@ module tb_top;
 		
 		rx_avail_clear = 0;
 		reset = 0;
+		
+		#20000;
+		$stop;
 		
 		while( 1 ) begin
 			while ( ~rx_avail ) #1;
