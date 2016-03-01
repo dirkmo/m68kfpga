@@ -18,6 +18,7 @@ def openserial():
 def sendrecord(record):
 #	sys.stdout.write("'"+record+"'\n")
 	port.write(record+"\n")
+	ack = 'E'
 	ack = port.read(1)
 	if ack == 'K':
 		return 1

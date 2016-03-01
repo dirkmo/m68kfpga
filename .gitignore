@@ -1,0 +1,10 @@
+*.o
+*~
+*.map
+*.bin
+/rtl/*
+!/rtl/*.v
+*.hex
+/src/*.v
+!/src/bootstrap.v
+

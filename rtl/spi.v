@@ -70,9 +70,11 @@ always @(posedge clk) begin
 				end
 			end
 			if( lds ) begin // 1: CTRL REG: CS_N[6:4], CLK_DIV[3:1], active
-				clk_div[2:0] <= data_write[3:1];
-				spi_cs_reg[2:0] <= data_write[6:4];
-				ack <= 1'b1;
+				if( ~active ) begin
+					clk_div[2:0] <= data_write[3:1];
+					spi_cs_reg[2:0] <= data_write[6:4];
+					ack <= 1'b1;
+				end
 			end
 		end // if( addr[7:0] == 8'd0 )
 	end

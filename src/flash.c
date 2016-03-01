@@ -1,6 +1,5 @@
 #include "m68kdefs.h"
-#include "uart.h"
-#include <stdbool.h>
+#include "flash.h"
 
 typedef enum flash_cmd_t {
 	FLASH_CMD_READ			= 0x03,
@@ -21,134 +20,133 @@ typedef enum flash_cmd_t {
 	FLASH_CMD_DBSY			= 0x80,
 } flash_cmd_t;
 
+#define FLASH_SELECT 		SPI_CTRL = SPI_CTRL_MASK_CS1
+#define FLASH_DESELECT		SPI_CTRL = 0
+#define FLASH_SEND(byte)	SPI_RXTX = byte
+#define FLASH_RECEIVE()		SPI_RXTX
+
 bool flash_is_busy(void) {
 	// select slave 1, clkdiv=1
-	SPI_CTRL = SPI_CTRL_MASK_CS1;
+	FLASH_SELECT;
 	// Command
-	SPI_RXTX = FLASH_CMD_RDSR;
-	SPI_RXTX = 0; // clk erzeugen
-	uint8_t status = SPI_RXTX;
-	SPI_CTRL = 0; // Deselect flash
+	FLASH_SEND( FLASH_CMD_RDSR );
+	FLASH_SEND( 0 ); // clk erzeugen
+	uint8_t status = FLASH_RECEIVE();
+	FLASH_DESELECT; // Deselect flash
 	return status & 0x01;
 }
 
 uint16_t flash_read_id(void) {
 	while(flash_is_busy());
 	// select slave 1, clkdiv=1
-	SPI_CTRL = SPI_CTRL_MASK_CS1;
+	FLASH_SELECT;
 	// Command
-	SPI_RXTX = FLASH_CMD_RDID;
+	FLASH_SEND( FLASH_CMD_RDID );
 	// 24 bit Address
-	SPI_RXTX = 0;
-	SPI_RXTX = 0;
-	SPI_RXTX = 0;
+	FLASH_SEND( 0 );
+	FLASH_SEND( 0 );
+	FLASH_SEND( 0 );
 	// read id
-	SPI_RXTX = 0;
-	uint16_t readid = SPI_RXTX << 8;
-	SPI_RXTX = 0;
-	readid |= SPI_RXTX;
-	SPI_CTRL = 0; // Deselect flash
+	FLASH_SEND( 0 );
+	uint16_t readid = FLASH_RECEIVE() << 8;
+	FLASH_SEND( 0 );
+	readid |= FLASH_RECEIVE();
+	FLASH_DESELECT; // Deselect flash
 	return readid;
 }
 
 uint32_t flash_read_jedec(void) {
 	while(flash_is_busy());
-	SPI_CTRL = SPI_CTRL_MASK_CS1;
+	FLASH_SELECT;
 	// Jedec ID
-	SPI_RXTX = FLASH_CMD_JEDECID;
-	SPI_RXTX = 0;
-	uint32_t jedecid = SPI_RXTX << 16;
-	SPI_RXTX = 0;
-	jedecid |= SPI_RXTX << 8;
-	SPI_RXTX = 0;
-	jedecid |= SPI_RXTX;
-	SPI_CTRL = 0; // Deselect flash
+	FLASH_SEND( FLASH_CMD_JEDECID );
+	FLASH_SEND( 0 );
+	uint32_t jedecid = FLASH_RECEIVE() << 16;
+	FLASH_SEND( 0 );
+	jedecid |= FLASH_RECEIVE() << 8;
+	FLASH_SEND( 0 );
+	jedecid |= FLASH_RECEIVE();
+	FLASH_DESELECT; // Deselect flash
 	return jedecid;
 }
 
 void flash_enable_write(void) {
 	while(flash_is_busy());
-	// select slave 1, clkdiv=1
-	SPI_CTRL = SPI_CTRL_MASK_CS1;
-	// Command
-	SPI_RXTX = FLASH_CMD_WREN;
-	SPI_RXTX;
-	SPI_CTRL = 0; // Deselect flash
+	FLASH_SELECT;
+	FLASH_SEND( FLASH_CMD_WREN );
+	FLASH_DESELECT; // Deselect flash
 }
 
 void flash_read( uint32_t addr, char *dst, uint32_t len ) {
 	while(flash_is_busy());
-	// select slave 1, clkdiv=1
-	SPI_CTRL = SPI_CTRL_MASK_CS1;
+	FLASH_SELECT;
 	// Command
-	SPI_RXTX = FLASH_CMD_READ;
+	FLASH_SEND( FLASH_CMD_READ );
 	// 24 bit Address
-	SPI_RXTX = (addr>>16) & 0xFF;
-	SPI_RXTX = (addr>>8) & 0xFF;
-	SPI_RXTX = addr & 0xFF;
+	FLASH_SEND( (addr>>16) & 0xFF );
+	FLASH_SEND( (addr>>8) & 0xFF );
+	FLASH_SEND( addr & 0xFF );
 	while( len-- ) {
-		SPI_RXTX = 0; // clk erzeugen
-		*dst++ = SPI_RXTX;
+		FLASH_SEND( 0 ); // clk erzeugen
+		*dst++ = FLASH_RECEIVE();
 	}
-	SPI_CTRL = 0; // Deselect flash
+	FLASH_DESELECT; // Deselect flash
 }
 
 void flash_disable_write(void) {
 	while(flash_is_busy());
 	flash_enable_write();
 	// select slave 1, clkdiv=1
-	SPI_CTRL = SPI_CTRL_MASK_CS1;
+	FLASH_SELECT;
 	// Command
-	SPI_RXTX = FLASH_CMD_WRDI;
-	SPI_RXTX;
-	SPI_CTRL = 0; // Deselect flash
+	FLASH_SEND( FLASH_CMD_WRDI );
+	FLASH_DESELECT; // Deselect flash
 }
 
-void flash_write_bytes( uint32_t addr, uint8_t *bytes, uint32_t byte_count ) {
+void flash_write_bytes( const uint8_t *bytes, uint32_t byte_count, uint32_t addr ) {
 	while(flash_is_busy());
-	flash_enable_write();
 	while(byte_count--) {
+		flash_enable_write();
 		// select slave 1, clkdiv=1
-		SPI_CTRL = SPI_CTRL_MASK_CS1;
+		FLASH_SELECT;
 		// Command
-		SPI_RXTX = FLASH_CMD_BYTE_PRG;
+		FLASH_SEND( FLASH_CMD_BYTE_PRG );
 		// 24 bit Address
-		SPI_RXTX = (addr>>16) & 0xFF;
-		SPI_RXTX = (addr>>8) & 0xFF;
-		SPI_RXTX = addr & 0xFF;
-		SPI_RXTX = *bytes++;
-		SPI_RXTX;
-		SPI_CTRL = 0;
+		FLASH_SEND( (addr>>16) & 0xFF );
+		FLASH_SEND( (addr>>8) & 0xFF );
+		FLASH_SEND( addr & 0xFF );
+		FLASH_SEND( *bytes++ );
+		FLASH_DESELECT;
+		addr++;
 		while(flash_is_busy());
 	}
+	flash_disable_write();
 }
 
-void flash_write_words( uint32_t addr, uint16_t *words, uint32_t word_count ) {
+void flash_write_words( const uint16_t *words, uint32_t word_count, uint32_t addr ) {
 	while(flash_is_busy());
 	flash_enable_write();
 	// select slave 1, clkdiv=1
-	SPI_CTRL = SPI_CTRL_MASK_CS1;
+	FLASH_SELECT;
 	// Command
-	SPI_RXTX = FLASH_CMD_AAI_PRG;
+	FLASH_SEND( FLASH_CMD_AAI_PRG );
 	// 24 bit Address
-	SPI_RXTX = (addr>>16) & 0xFF;
-	SPI_RXTX = (addr>>8) & 0xFF;
-	SPI_RXTX = addr & 0xFF;
+	FLASH_SEND( (addr>>16) & 0xFF );
+	FLASH_SEND( (addr>>8) & 0xFF );
+	FLASH_SEND( addr & 0xFF );
 	uint8_t *ch =(uint8_t*)words;
 	// first word
 	word_count--;
-	SPI_RXTX = *ch++;
-	SPI_RXTX = *ch++;
-	SPI_RXTX;
-	SPI_CTRL = 0; // Deselect flash
+	FLASH_SEND( *ch++ );
+	FLASH_SEND( *ch++ );
+	FLASH_DESELECT; // Deselect flash
 	while(flash_is_busy());
 	while( word_count-- ) {
-		SPI_CTRL = SPI_CTRL_MASK_CS1;
-		SPI_RXTX = FLASH_CMD_AAI_PRG;
-		SPI_RXTX = *ch++;
-		SPI_RXTX = *ch++;
-		SPI_RXTX;
-		SPI_CTRL = 0; // Deselect flash
+		FLASH_SELECT;
+		FLASH_SEND( FLASH_CMD_AAI_PRG );
+		FLASH_SEND( *ch++ );
+		FLASH_SEND( *ch++ );
+		FLASH_DESELECT; // Deselect flash
 		while(flash_is_busy());
 	}
 	flash_disable_write();
@@ -156,85 +154,35 @@ void flash_write_words( uint32_t addr, uint16_t *words, uint32_t word_count ) {
 
 uint8_t flash_read_status(void) {
 	// select slave 1, clkdiv=1
-	SPI_CTRL = SPI_CTRL_MASK_CS1;
+	FLASH_SELECT;
 	// Command
-	SPI_RXTX = FLASH_CMD_RDSR;
-	SPI_RXTX = 0; // clk erzeugen
-	uint8_t status = SPI_RXTX;
-	SPI_CTRL = 0; // Deselect flash
+	FLASH_SEND( FLASH_CMD_RDSR );
+	FLASH_SEND( 0 ); // clk erzeugen
+	uint8_t status = FLASH_RECEIVE();
+	FLASH_DESELECT; // Deselect flash
 	return status;
 }
 
 void flash_erase_sector( uint32_t addr ) {
 	while(flash_is_busy());
 	flash_enable_write();
-	// select slave 1, clkdiv=1
-	SPI_CTRL = SPI_CTRL_MASK_CS1;
-	// Command
-	SPI_RXTX = FLASH_CMD_4K_ERASE;
-	SPI_RXTX = ( addr >> 16 ) & 0xFF;
-	SPI_RXTX = ( addr >> 8 ) & 0xFF;
-	SPI_RXTX = addr & 0xFF;
-	SPI_RXTX;
-	SPI_CTRL = 0; // Deselect flash
+	FLASH_SELECT;
+	FLASH_SEND( FLASH_CMD_4K_ERASE );
+	FLASH_SEND( ( addr >> 16 ) & 0xFF );
+	FLASH_SEND( ( addr >> 8 ) & 0xFF );
+	FLASH_SEND( addr & 0xFF );
+	FLASH_DESELECT; // Deselect flash
 }
 
 void flash_remove_bpl(void) {
 	while(flash_is_busy());
 	flash_enable_write();
-	// select slave 1, clkdiv=1
-	SPI_CTRL = SPI_CTRL_MASK_CS1;
-	SPI_RXTX = FLASH_CMD_EWSR; // enable write to status register
-	SPI_RXTX;
-	SPI_CTRL = 0; // Deselect flash
-
-	SPI_CTRL = SPI_CTRL_MASK_CS1;
-	SPI_RXTX = FLASH_CMD_WRSR;
-	SPI_RXTX = 0; // disable BPL bits
-	SPI_CTRL = 0; // Deselect flash
-}
-
-int main(void) {
-	uart_puts("Flash test\n");
-	
-	uart_puts("ReadID: 0x");
-	uart_write_hex( flash_read_id(), 4 );
-	
-	uart_puts("\nJedecID: 0x");
-	uart_write_hex( flash_read_jedec(), 6 );
-	
-	uart_puts("\nStatus: ");
-	uart_write_hex( flash_read_status(), 2 );
-	uart_puts("\n");
-	
-	flash_remove_bpl();
-	
-	uart_puts("\nStatus: ");
-	uart_write_hex( flash_read_status(), 2 );
-	uart_puts("\n");
-	
-	char buf[16];
-	flash_read( 0, buf, sizeof(buf) );
-	int i;
-	for( i=0;i<sizeof(buf); i++) {
-		uart_write_hex( buf[i], 2 );
-		uart_putc(' ');
-	}
-	uart_puts("\n");
-	flash_erase_sector(1000);
-	while(flash_is_busy());
-	
-	
-	flash_read( 1000, buf, 6 );
-	uart_puts("Gelesen: ");
-	for( i=0;i<sizeof(buf); i++) {
-		uart_write_hex( buf[i], 2 );
-		uart_putc(' ');
-	}
-	uart_puts("\n");
-
-
-	flash_disable_write();
-	return 0;
+	FLASH_SELECT;
+	FLASH_SEND( FLASH_CMD_EWSR ); // enable write to status register
+	FLASH_DESELECT;
+	FLASH_SELECT;
+	FLASH_SEND( FLASH_CMD_WRSR );
+	FLASH_SEND( 0 ); // reset BPL bits
+	FLASH_DESELECT;
 }
 

@@ -15,7 +15,7 @@ void uart_echo_off(void);
 void uint2hex(uint32_t val, unsigned char *str, uint8_t hexchars);
 uint32_t hex2uint(const char *s, uint8_t len);
 
-void uart_readln(uint8_t *buf, uint8_t maxlen);
+uint8_t uart_readln(uint8_t *buf, uint8_t maxlen);
 void uart_puts(uint8_t *str);
 
 uint8_t uart_read_hex(uint32_t *val);

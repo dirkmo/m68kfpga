@@ -145,15 +145,18 @@ void main(void) {
     	} else if( c == 'd' ) {
     		dump();
     		continue;
+    	} else if( c == 's' ) {
+    		uart_puts("\nStart address: ");
+    		uart_write_hex( start_address, 8 );
+    		uart_puts("\n");
+    		continue;
 	    } else if( c != 'S' ) {
-	    	uart_putc('E');
 	    	continue;
 	    }
 		linebuf[0] = 'S';
-		uart_readln( linebuf+1, sizeof(linebuf) );
+		uint8_t line_len = uart_readln( linebuf+1, sizeof(linebuf)-1 );
 
-		if ( !validate( linebuf ) ) {
-			// Checksum error
+		if ( ( line_len == sizeof(linebuf)-1 ) || !validate( linebuf ) ) {
 			uart_putc('E');
 			continue;
 		}

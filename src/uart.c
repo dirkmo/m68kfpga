@@ -63,15 +63,18 @@ uint8_t uart_putc(uint8_t c) {
     return c;
 }
 
-void uart_readln(uint8_t *buf, uint8_t maxlen) {
-    int i=0;
+uint8_t uart_readln(uint8_t *buf, uint8_t maxlen) {
+    uint8_t i=0;
     do {
-        buf[i] = uart_getc();
         if( i < maxlen ) {
+            buf[i] = uart_getc();
             ++i;
+        } else {
+        	break;
         }
     } while(buf[i-1] != CR && buf[i-1] != LF);
     buf[i-1] = 0;
+    return i;
 }
 
 void uart_puts(uint8_t *str) {
