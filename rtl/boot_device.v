@@ -60,8 +60,8 @@ module boot_device(
 	// n_uds = 0 --> Byte auf gerade Adresse, data[15:8]
 	// n_lds = 0 --> Byte auf ungerader Adresse, data[7:0]
 
-	// Lesezugriff auf Adresse < 0x1000 liefert Bootstrapcode, sonst RAM-Zugriff 
-	wire bootmode_read = bootmode && (addr < 24'h1000);
+	// Lesezugriff auf Adresse < 0x1A00 liefert Bootstrapcode, sonst RAM-Zugriff 
+	wire bootmode_read = bootmode && (addr < 24'h1A00);
 	
 	assign sram_uds = bootmode_read ? 1'b0 : uds;
 	assign sram_lds = bootmode_read ? 1'b0 : lds;

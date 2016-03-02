@@ -4,6 +4,7 @@
 #include <ctype.h>
 
 static uint8_t echo_on = 0;
+static uint8_t overflow = 0;
 
 void uart_echo_on(void) {
     echo_on = 1;
@@ -11,6 +12,12 @@ void uart_echo_on(void) {
 
 void uart_echo_off(void) {
     echo_on = 0;
+}
+
+uint8_t uart_rx_overflow(void) {
+	uint8_t ov = overflow;
+	overflow = 0;
+	return ov != 0;
 }
 
 void uint2hex(uint32_t val, unsigned char *str, uint8_t hexchars) {
@@ -48,8 +55,12 @@ uint32_t hex2uint(const char *s, uint8_t len) {
 uint8_t uart_getc(void) {
     int ch;
     int status = 0;
-    while(status == 0) {
-        status = UART_STAT & UART_MASK_RXAVAIL;
+    while(1) {
+        status = UART_STAT;
+		overflow |= status & UART_MASK_RXOVERFLOW;
+		if( status & UART_MASK_RXAVAIL ) {
+			break;
+		}
     }
     ch = UART_RXTX;
     if(echo_on) {
@@ -77,7 +88,7 @@ uint8_t uart_readln(uint8_t *buf, uint8_t maxlen) {
     return i;
 }
 
-void uart_puts(uint8_t *str) {
+void uart_puts(const uint8_t *str) {
     while(*str) {
         UART_RXTX = *str;
         ++str;

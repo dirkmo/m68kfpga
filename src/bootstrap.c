@@ -1,5 +1,6 @@
 #include "m68kdefs.h"
 #include "uart.h"
+#include "flash.h"
 
 static char toupper(char c) {
 	if(c>='a' && c <= 'z' ) c-='a'+'A';
@@ -14,8 +15,21 @@ static uint8_t nibble_to_uint8( char nibble ) {
 	return nibble;
 }
 
+static uint8_t hex_prompt( const char *str, uint32_t *number ) {
+	uart_puts( str );
+	uart_echo_on();
+	uint8_t ret = uart_read_hex( number );
+	uart_putc('\n');
+	uart_echo_off();
+	return ret;
+}
+
 static void execute(uint32_t address) {
 	void (*func)();
+	char str[22] = "Address (01234567): ";
+	uint2hex(address, str+9, 8);
+	str[17]=')';
+	hex_prompt( str, &address );
 	func = (void*)address;
 	uart_puts("\nCalling 0x");
 	uart_write_hex(address, 8);
@@ -59,14 +73,10 @@ static char validate( uint8_t *buf ) {
 static void dump(void) {
 	uint32_t addr;
 	uint32_t len;
-	uart_echo_on();
-	uart_puts("\ndump address: ");
-	if ( uart_read_hex( &addr ) == 0 ) {
-		uart_echo_off();
+	if( hex_prompt( "address: ", &addr ) == 0 ) {
 		return;
 	}
-	uart_puts("\nlen: ");
-	if ( uart_read_hex( &len ) == 0 ) {
+	if( hex_prompt( "len: ", &len ) == 0 ) {
 		len = 256;
 	}
 	uart_putc('\n');
@@ -82,44 +92,59 @@ static void dump(void) {
 		addr++;
 	}
 	uart_puts("\n\n");
-	uart_echo_off();
 }
 
-/*
-void mem_test(void) {
-	int count = 0;
-	uart_puts("Mem test start.\n");
-	uint8_t *mem = (uint8_t*)0x2000;
-	while(mem < (uint8_t*)0x100000) {
-		if( (uint32_t)mem%0x1000 == 0 ) {
-			uart_puts("\rWriting ");
-			uart_write_hex( (uint32_t)mem, 8 );
-		}
-		*mem = ((uint32_t)mem)&255;
-		mem++;
+static void erase_sector(void) {
+	uint32_t addr;
+	if( hex_prompt( "address: ", &addr ) == 0 ) {
+		return;
 	}
-	uart_puts("\n");
-	mem = (uint8_t*)0x2000;
-	while( mem < (uint8_t*)0x100000 ) {
-		if( (uint32_t)mem%0x1000 == 0 ) {
-			uart_puts("\rReading ");
-			uart_write_hex( (uint32_t)mem, 8 );
-		}
-		if( ((uint8_t)(*mem)) != (uint8_t)( ((uint32_t)mem)&255 ) ){
-			count++;
-			uart_puts("\nError at 0x");
-			uart_write_hex((uint32_t)mem,8);
-			uart_puts(": 0x");
-			uart_write_hex((uint8_t)(*mem),8);
-			uart_puts("\n");
-		}
-		mem++;
-		if(count > 50) {
-			break;
-		}
+	flash_remove_bpl();
+	flash_erase_sector(addr);
+	uart_write_hex( addr & 0xFFFFF000, 8 );
+	uart_puts(" - ");
+	uart_write_hex( addr | 0x00000FFF, 8 );
+	uart_puts("ok\n");
+}
+
+static void write_flash(void) {
+	uint32_t mem_addr;
+	uint32_t flash_addr;
+	uint32_t len;
+	uart_puts("mem ");
+	if( hex_prompt( "address: ", &mem_addr ) == 0 ) {
+		return;
+	}
+	if( hex_prompt( "count: ", &len ) == 0 ) {
+		return;
+	}
+	uart_puts("flash ");
+	if( hex_prompt( "address: ", &flash_addr ) == 0 ) {
+		return;
+	}
+	flash_remove_bpl();
+	flash_write_bytes( (char*)mem_addr, len, flash_addr );
+	uart_puts("ok\n");
+}
+
+static void read_flash(void) {
+	uint32_t mem_addr;
+	uint32_t flash_addr;
+	uint32_t len;
+	uart_puts("flash ");
+	if( hex_prompt( "address: ", &flash_addr ) == 0 ) {
+		return;
+	}
+	if( hex_prompt( "count: ", &len ) == 0 ) {
+		return;
+	}
+	uart_puts("mem ");
+	if( hex_prompt( "address: ", &mem_addr ) ) {
+		flash_read(flash_addr, (char*)mem_addr, len);
+		uart_puts("ok\n");
 	}
 }
-*/
+
 void main(void) {
 	uint32_t start_address = 0xFFFFFFFF;
 	uint32_t address;
@@ -130,8 +155,8 @@ void main(void) {
     char c;
 	uint8_t *dst;
 	start:
-	uart_puts("\x1B[2J\x1B[1;1Hm68k fpga bootloader\r\n\n");
-   	uart_puts("Waiting for srecord data, (d) for dump, (g) to execute > ");
+	uart_puts("\x1B[2J\x1B[1;1Hm68k fpga monitor\r\n\n");
+   	uart_puts("(d)ump (g)o, (e)rase sector, (w)rite flash, (r)ead flash\n");
     while( 1 ) {
     	c = uart_getc();
 	    if( c == 'g' ) {
@@ -139,18 +164,24 @@ void main(void) {
 	    	continue;
     	} else if( c == 'h' ) {
     		goto start;
-    	} else if( c == 'm' ) {
-    		//mem_test();
-    		continue;
     	} else if( c == 'd' ) {
     		dump();
     		continue;
     	} else if( c == 's' ) {
-    		uart_puts("\nStart address: ");
+    		uart_puts("address: ");
     		uart_write_hex( start_address, 8 );
-    		uart_puts("\n");
+    		uart_putc('\n');
     		continue;
-	    } else if( c != 'S' ) {
+    	} else if( c == 'e' ) {
+    		erase_sector();
+			continue;
+    	} else if( c == 'w' ) {
+			write_flash();
+    		continue;
+    	} else if( c == 'r' ) {
+			read_flash();
+    		continue;
+		} else if( c != 'S' ) {
 	    	continue;
 	    }
 		linebuf[0] = 'S';

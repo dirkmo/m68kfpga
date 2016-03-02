@@ -50,8 +50,13 @@ while True:
 #	sys.stdout.write(srec)
 	if srec[0] != 'S': break
 	if sendrecord( srec.strip() ) == 0:
-		port.write("\n\n\n\n\n\n")
+		time.sleep(0.1)
+		port.write("\r\n\r\n\r\n")
+		time.sleep(0.1)
 		port.read(port.inWaiting())
+		retry = retry + 1
+	else:
+		retry = 0
 
 f.close()
 port.close()

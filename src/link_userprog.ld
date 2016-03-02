@@ -13,16 +13,14 @@ SECTIONS
 		*(.text)
 	} > ram
 
-	.data :
-	{
+	.data : {
 		. = ALIGN(0x4);
 		*(.rodata)
 		. = ALIGN(0x4);
 		*(.data)
 	} > ram
 
-	.bss :
-	{
+	.bss : {
 		. = ALIGN(0x4);
 		__bss_start = . ;
 		*(.bss)
