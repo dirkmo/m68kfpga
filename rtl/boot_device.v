@@ -13,6 +13,7 @@ module boot_device(
 		output ack,
 		
 		output reg bootmode,
+		input boot_sel,
 		
 		// SRAM Signale
 		output [17:0] ram_addr,
@@ -60,8 +61,11 @@ module boot_device(
 	// n_uds = 0 --> Byte auf gerade Adresse, data[15:8]
 	// n_lds = 0 --> Byte auf ungerader Adresse, data[7:0]
 
-	// Lesezugriff auf Adresse < 0x1A00 liefert Bootstrapcode, sonst RAM-Zugriff 
-	wire bootmode_read = bootmode && (addr < 24'h1A00);
+	// Lesezugriff auf Adresse < 0x1A00 liefert Bootstrapcode, sonst RAM-Zugriff
+	wire [23:0] bootstrap_code  = 24'h1A00;
+	wire [23:0] bootstage1_code = 24'h1000;
+	wire [23:0] boot_code = boot_sel ? bootstage1_code : bootstrap_code;
+	wire bootmode_read = bootmode && (addr < boot_code);
 	
 	assign sram_uds = bootmode_read ? 1'b0 : uds;
 	assign sram_lds = bootmode_read ? 1'b0 : lds;
@@ -108,9 +112,15 @@ module boot_device(
 	always @(posedge clk) begin
 		boot_read[15:0] = 16'h0000;
 		if( bootmode ) begin
-			case( { addr[23:1], 1'b0 }  )
-`include "../src/bootstrap.v"
-			endcase
+			if(boot_sel == 0) begin
+				case( { addr[23:1], 1'b0 }  )
+					`include "../src/bootstrap.v"
+				endcase
+			end else begin
+				case( { addr[23:1], 1'b0 }  )
+					`include "../src/bootstage1.v"
+				endcase
+			end
 		end else begin
 		end
 	end

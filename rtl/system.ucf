@@ -82,3 +82,5 @@ Net spi_clk LOC=D15;
 Net spi_cs_n<0> LOC=E15;
 Net spi_cs_n<1> LOC=H16;
 Net spi_cs_n<2> LOC=K16;
+
+Net boot_sel LOC=K13;

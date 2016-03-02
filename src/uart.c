@@ -1,7 +1,5 @@
 #include "m68kdefs.h"
 #include "uart.h"
-#include <string.h>
-#include <ctype.h>
 
 static uint8_t echo_on = 0;
 static uint8_t overflow = 0;
@@ -18,6 +16,21 @@ uint8_t uart_rx_overflow(void) {
 	uint8_t ov = overflow;
 	overflow = 0;
 	return ov != 0;
+}
+
+int toupper( int c ) {
+	if( c >= 'a' && c <= 'z' ) {
+		return c - 'a' + 'A';
+	}
+	return c;
+}
+
+uint32_t strlen( const char *str ) {
+	uint32_t count = 0;
+	while( *str++ ) {
+		count++;
+	}
+	return count;
 }
 
 void uint2hex(uint32_t val, unsigned char *str, uint8_t hexchars) {

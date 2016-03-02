@@ -27,7 +27,9 @@ module system(
 	input spi_miso,
 	output spi_mosi,
 	output spi_clk,
-	output [2:0] spi_cs_n
+	output [2:0] spi_cs_n,
+	
+	input boot_sel
 );
 
 	wire rw;
@@ -39,6 +41,14 @@ module system(
 	wire uds_n;
 	wire lds_n;
 	wire [2:0] ipl_n = 3'b111;
+	
+	reg boot_sel_r;
+	
+	always@(posedge clk) begin
+		if(~reset_n) begin
+			boot_sel_r <= boot_sel;
+		end
+	end
 
 	TG68 cpu (
     .clk(clk), 
@@ -75,6 +85,7 @@ module system(
     .rw(rw), 
     .ack(mem_ack),
 	 .bootmode(bootmode),
+	 .boot_sel(boot_sel_r),
 	 
 	// SRAM Signale
 	 .ram_addr( ram_addr[17:0] ),

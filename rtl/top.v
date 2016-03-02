@@ -23,7 +23,9 @@ module top(
 	input spi_miso,
 	output spi_mosi,
 	output spi_clk,
-	output [2:0] spi_cs_n
+	output [2:0] spi_cs_n,
+	
+	input boot_sel
 	
 );
 
@@ -64,7 +66,8 @@ module top(
  		 .spi_miso(spi_miso),
 		 .spi_mosi(spi_mosi),
 		 .spi_clk(spi_clk),
-		 .spi_cs_n(spi_cs_n)
+		 .spi_cs_n(spi_cs_n),
+		 .boot_sel(boot_sel)
 	);
 
 endmodule

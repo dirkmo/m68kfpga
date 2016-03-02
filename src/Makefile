@@ -5,18 +5,19 @@ AFLAGS = -m68000
 
 bootstrap: bootstrap.c bs_crt0.o uart.o flash.o
 	m68k-elf-gcc $(CFLAGS) $(INCS) -c bootstrap.c -o bootstrap.o
-	m68k-elf-ld $(LIBS) -Map=main.map -nostartfiles -T link.ld bs_crt0.o bootstrap.o uart.o flash.o -lc -o bootstrap
+	m68k-elf-ld $(LIBS) -Map=bootstrap.map -nostartfiles -T bootstrap.ld bs_crt0.o bootstrap.o uart.o flash.o -o bootstrap
 	m68k-elf-objcopy -O binary -S bootstrap bootstrap.bin
 	../host/bin2verilog bootstrap.bin > bootstrap.v
 
-test: test.c crt0.o uart.o
-	m68k-elf-gcc $(CFLAGS) $(INCS) -c test.c -o test.o
-	m68k-elf-ld $(LIBS) -nostartfiles -T link_userprog.ld crt0.o uart.o -lc test.o -o test
-	m68k-elf-objcopy -O srec -S test test.hex
+bootstage1: bootstage1.c bs_crt0.o uart.o flash.o
+	m68k-elf-gcc $(CFLAGS) $(INCS) -c bootstage1.c -o bootstage1.o
+	m68k-elf-ld $(LIBS) -Map=bootstage1.map -nostartfiles -T bootstage1.ld bs_crt0.o bootstage1.o uart.o flash.o -o bootstage1
+	m68k-elf-objcopy -O binary -S bootstage1 bootstage1.bin
+	../host/bin2verilog bootstage1.bin > bootstage1.v
 
 userprog: userprog.c uart.o crt0.o
 	m68k-elf-gcc $(CFLAGS) $(INCS) -c userprog.c -o userprog.o
-	m68k-elf-ld $(LIBS) -nostartfiles -T link_userprog.ld crt0.o uart.o userprog.o -lc -o userprog
+	m68k-elf-ld $(LIBS) -Map=userprog.map -nostartfiles -T link_0x1000.ld crt0.o uart.o userprog.o  -o userprog
 	m68k-elf-objcopy -O srec -S userprog userprog.hex
 
 crt0.o: crt0.s
@@ -29,8 +30,4 @@ bs_crt0.o: bs_crt0.s
 	m68k-elf-gcc $(CFLAGS) $(INCS) -c $< -o $@
 	
 clean:
-	rm -f bootstrap *.o
-
-bin:
-	m68k-elf-objcopy -O srec -S main main.hex
-	m68k-elf-objcopy -O binary -S main main.bin
+	rm -f bootstrap bootstage1 *.o *.bin

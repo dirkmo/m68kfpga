@@ -104,7 +104,7 @@ static void erase_sector(void) {
 	uart_write_hex( addr & 0xFFFFF000, 8 );
 	uart_puts(" - ");
 	uart_write_hex( addr | 0x00000FFF, 8 );
-	uart_puts("ok\n");
+	uart_puts(" ok\n");
 }
 
 static void write_flash(void) {
@@ -156,7 +156,7 @@ void main(void) {
 	uint8_t *dst;
 	start:
 	uart_puts("\x1B[2J\x1B[1;1Hm68k fpga monitor\r\n\n");
-   	uart_puts("(d)ump (g)o, (e)rase sector, (w)rite flash, (r)ead flash\n");
+   	uart_puts("(d)ump  (g)o  (e)rase sector  (w)rite flash  (r)ead flash\n");
     while( 1 ) {
     	c = uart_getc();
 	    if( c == 'g' ) {
