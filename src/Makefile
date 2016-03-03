@@ -17,8 +17,13 @@ bootstage1: bootstage1.c bs_crt0.o uart.o flash.o
 
 userprog: userprog.c uart.o crt0.o
 	m68k-elf-gcc $(CFLAGS) $(INCS) -c userprog.c -o userprog.o
-	m68k-elf-ld $(LIBS) -Map=userprog.map -nostartfiles -T link_0x1000.ld crt0.o uart.o userprog.o  -o userprog
+	m68k-elf-ld $(LIBS) -Map=userprog.map -nostartfiles -T userprog.ld crt0.o uart.o userprog.o  -o userprog
 	m68k-elf-objcopy -O srec -S userprog userprog.hex
+
+timertest: timertest.c uart.o crt0.o
+	m68k-elf-gcc $(CFLAGS) $(INCS) -c timertest.c -o timertest.o
+	m68k-elf-ld $(LIBS) -Map=timertest.map -nostartfiles -T userprog.ld crt0.o uart.o timertest.o  -o timertest
+	m68k-elf-objcopy -O srec -S timertest timertest.hex
 
 crt0.o: crt0.s
 	m68k-elf-as $(AFLAGS) crt0.s -o crt0.o

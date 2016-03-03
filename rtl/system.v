@@ -162,6 +162,24 @@ module system(
     .spi_active(spi_active)
     );
 
+	wire [15:0] timer_write;
+	wire [15:0] timer_read;
+	wire [7:0] timer_addr;
+	wire timer_uds, timer_lds;
+	
+	timer timer1 (
+		.clk(clk),
+		.reset_n(reset_n),
+		.data_write(timer_write),
+		.data_read(timer_read),
+		.addr(timer_addr),
+		.uds(timer_uds),
+		.lds(timer_lds),
+		.rw(rw),
+		.ack(timer_ack),
+		.overflow()
+	);
+	
 	
 	device_mux mux (
     .clk(clk), 
@@ -200,7 +218,14 @@ module system(
     .slave4_addr(spi_addr), 
     .slave4_uds(spi_uds), 
 	 .slave4_lds(spi_lds), 
-    .slave4_ack(spi_ack)	 
+    .slave4_ack(spi_ack),
+	 
+	 .slave5_read(timer_read), 
+    .slave5_write(timer_write), 
+    .slave5_addr(timer_addr), 
+    .slave5_uds(timer_uds), 
+	 .slave5_lds(timer_lds), 
+    .slave5_ack(timer_ack)	
 	 
     );
 

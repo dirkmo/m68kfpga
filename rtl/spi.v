@@ -33,7 +33,7 @@ reg start;
 reg tx_out;
 
 assign spi_mosi = active ? tx_out : 1'b0; // MSB first
-assign spi_clk = active ? clk_counter[  16'd1 << clk_div[2:0] ] : 1'b0;
+assign spi_clk = active ? clk_counter[ clk_div[2:0] ] : 1'b0;
 
 assign spi_cs_n[2:0] =	spi_cs_reg==1 ? 3'b110 : 
 								spi_cs_reg==2 ? 3'b101 : 

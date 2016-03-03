@@ -38,5 +38,15 @@
 #define SPI_CTRL_MASK_CS2 (2<<4)
 #define SPI_CTRL_MASK_CS3 (3<<4)
 
+//-------------------------------------------------------
+// Timer
+
+#define TIMER_CNT  (*((volatile uint32_t*)0x100300))
+#define TIMER_CMP  (*((volatile uint32_t*)0x100304))
+#define TIMER_CTRL (*((volatile uint16_t*)0x100308))
+// wire [15:0] ctrl = { 8'd0, { 2'b00, clk_div[4:0], enable } };
+#define TIMER_CTRL_MASK_ENABLE 0x0001
+// timer_clk = clk / ( 2^(clk_div+1)
+
 #endif
 
