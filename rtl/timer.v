@@ -34,6 +34,7 @@ assign overflow = enable && ( timer == cmp );
 
 wire [15:0] ctrl = { 8'd0, { 2'b00, clk_div[4:0], enable } };
 
+wire [6:0] addr7 = addr[7:1];
 
 always @(posedge clk) begin
 	ack <= 1'b0;
@@ -47,84 +48,94 @@ always @(posedge clk) begin
 	if( rw ) begin // read from timer module -->
 		// 0..3: timer register
 		if( addr[7:1] == 7'd0 ) begin
-			if( uds ) begin // 0: Timer MSB
+			if( uds ) begin // 0: Timer byte 3 (MSB)
 				data_read[15:8] <= timer[31:24];
 			end
-			if( lds ) begin // 1: Timer byte 3
+			if( lds ) begin // 1: Timer byte 2
 				data_read[7:0] <= timer[23:16];
 			end
 		end else
 		if( addr[7:1] == 7'd1 ) begin
-			if( uds ) begin // 2: Timer byte 2
+			if( uds ) begin // 2: Timer byte 1
 				data_read[15:8] <= timer[15:8];
 			end
-			if( lds ) begin // 3: Timer LSB
+			if( lds ) begin // 3: Timer byte 0 (LSB)
 				data_read[7:0] <= timer[7:0];
 			end
 		end else
 		// 4..7: cmp register
 		if( addr[7:1] == 7'd2 ) begin
-			if( uds ) begin // 0: cmp MSB
+			if( uds ) begin // 4: cmp byte 3 (MSB)
 				data_read[15:8] <= cmp[31:24];
 			end
-			if( lds ) begin // 1: cmp byte 3
+			if( lds ) begin // 5: cmp byte 2
 				data_read[7:0] <= cmp[23:16];
 			end
 		end else
 		if( addr[7:1] == 7'd3 ) begin
-			if( uds ) begin // 2: cmp byte 2
+			if( uds ) begin // 6: cmp byte 1
 				data_read[15:8] <= cmp[15:8];
 			end
-			if( lds ) begin // 3: cmp LSB
+			if( lds ) begin // 7: cmp byte 0 (LSB)
 				data_read[7:0] <= cmp[7:0];
 			end
 		end else		
-		// 8: ctrl
+		// 8: ctrl 8..11
 		if( addr[7:1] == 7'd4 ) begin
-			if( uds ) begin // 0: ctrl
-				data_read[15:8] <= ctrl[15:8];
+			if( uds ) begin // 8: ctrl byte 3 (MSB)
+				data_read[15:8] <= 8'd1;
 			end
-			if( lds ) begin // 1: ctrl
-				data_read[7:0] <= ctrl[7:0];
+			if( lds ) begin // 9: ctrl byte 2
+				data_read[7:0] <= 8'd2;
+			end
+		end else
+		if( addr[7:1] == 7'd5 ) begin
+			if( uds ) begin // 10: ctrl byte 1
+				data_read[15:8] <= 8'd3;//ctrl[15:8];
+			end
+			if( lds ) begin // 11: ctrl byte 0 (LSB)
+				data_read[7:0] <= 8'd4;//ctrl[7:0];
 			end
 		end
 		if( uds || lds ) ack <= 1'b1;
+		
 	end else begin // write to timer module -->
+
 		// 0..3: timer register
 		if( addr[7:1] == 7'd0 ) begin
-			if( uds ) begin // 0: timer MSB
-			end
-			if( lds ) begin // 1: timer byte 3
-			end
+			// wird timer register block behandelt
 		end else
 		if( addr[7:1] == 7'd1 ) begin
-			if( uds ) begin // 2: timer byte 2
-			end
-			if( lds ) begin // 3: timer LSB
-			end
+			// wird timer register block behandelt
 		end else
 		// 4..7: cmp register
 		if( addr[7:1] == 7'd2 ) begin
-			if( uds ) begin // 0: cmp MSB
+			if( uds ) begin // 4: cmp byte 3 (MSB)
 				cmp[31:24] <= data_write[15:8];
 			end
-			if( lds ) begin // 1: cmp byte 3
+			if( lds ) begin // 5: cmp byte 2
 				cmp[23:16] <= data_write[7:0];
 			end
-			ack <= 1;
 		end else
 		if( addr[7:1] == 7'd3 ) begin
-			if( uds ) begin // 2: cmp byte 2
+			if( uds ) begin // 6: cmp byte 1
 				cmp[15:8] <= data_write[15:8];
 			end
-			if( lds ) begin // 3: cmp LSB
+			if( lds ) begin // 7: cmp byte 0 (LSB)
 				cmp[7:0] <= data_write[7:0];
 			end
 		end else
+		// 8..11: ctrl register
 		if( addr[7:1] == 7'd4 ) begin
-			if( uds ) begin // 0: ctrl
+			if( uds ) begin // 8: ctrl byte 3 (MSB)
 			end
-			if( lds ) begin // 1: ctrl
+			if( lds ) begin // 9: ctrl byte 2
+			end
+		end else
+		if( addr[7:1] == 7'd5 ) begin
+			if( uds ) begin // 10: ctrl byte 1
+			end
+			if( lds ) begin // 11: ctrl byte 0 (LSB)
 				{ clk_div[4:0], enable } <= data_write[5:0];
 			end
 		end
@@ -139,12 +150,12 @@ always @(posedge clk) begin
 	end else begin
 		if( ~rw ) begin
 			if( addr[7:1] == 7'd0 ) begin
-				if( uds ) timer[7:0] <= data_write[15:8];
-				if( lds ) timer[15:8] <= data_write[7:0];
+				if( uds ) timer[31:24] <= data_write[15:8];
+				if( lds ) timer[23:16] <= data_write[7:0];
 			end else
 			if( addr[7:1] == 7'd1 ) begin
-				if( uds ) timer[23:16] <= data_write[15:8];
-				if( lds ) timer[31:24] <= data_write[7:0];
+				if( uds ) timer[15:8] <= data_write[15:8];
+				if( lds ) timer[7:0] <= data_write[7:0];
 			end
 		end
 		if( overflow && timer_tick ) begin

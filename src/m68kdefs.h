@@ -6,8 +6,8 @@
 //-------------------------------------------------------
 // UART
 
-#define UART_RXTX (*((volatile uint8_t*)0x100000))
-#define UART_STAT (*((volatile uint8_t*)0x100001))
+#define UART_RXTX (*((volatile uint8_t*)0x100003))
+#define UART_STAT (*((volatile uint8_t*)0x100007))
 
 #define UART_MASK_RXAVAIL		1
 #define UART_MASK_TXACTIVE		2
@@ -29,8 +29,8 @@
 //-------------------------------------------------------
 // SPI
 
-#define SPI_RXTX (*((volatile uint8_t*)0x100200))
-#define SPI_CTRL (*((volatile uint8_t*)0x100201))
+#define SPI_RXTX (*((volatile uint8_t*)0x100203))
+#define SPI_CTRL (*((volatile uint8_t*)0x100207))
 
 #define SPI_CTRL_MASK_BUSY 1
 
@@ -43,8 +43,9 @@
 
 #define TIMER_CNT  (*((volatile uint32_t*)0x100300))
 #define TIMER_CMP  (*((volatile uint32_t*)0x100304))
-#define TIMER_CTRL (*((volatile uint16_t*)0x100308))
-// wire [15:0] ctrl = { 8'd0, { 2'b00, clk_div[4:0], enable } };
+//#define TIMER_CTRL (*((volatile uint32_t*)0x100308))
+#define TIMER_CTRL (*((volatile uint8_t*) 0x10030B))
+// wire [31:0] ctrl = { 8'd0, 8'd0, 8'd0, { 2'b00, clk_div[4:0], enable } };
 #define TIMER_CTRL_MASK_ENABLE 0x0001
 // timer_clk = clk / ( 2^(clk_div+1)
 

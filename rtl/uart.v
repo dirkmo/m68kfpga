@@ -93,32 +93,79 @@ always @(posedge clk) begin
 	fifo_pop = 1'b0;
 	if( ~reset_n ) begin
 	end else
-	if( rw ) begin // read from uart
+	if( rw ) begin // read from uart -->
+		// 0..3 rxtx register
 		if( addr[7:1] == 7'd0 ) begin
-			if( uds ) begin // 0: UART RXTX
-				data_read[15:8] = fifo_out[7:0];
+			if( uds ) begin // 0: rxtx byte 3 (MSB)
+			end
+			if( lds ) begin // 1: rxtx byte 2
+			end
+			ack = 1;
+		end else
+		if( addr[7:1] == 7'd1 ) begin
+			ack = 1'b1;
+			if( uds ) begin // 2: rxtx byte 1
+			end
+			if( lds ) begin // 3: rxtx byte 0 (LSB)
+				data_read[7:0] = fifo_out[7:0];
 				rx_is_being_read = 1'b1;
 				fifo_pop = 1;
-				ack = 1'b1;
 			end
-			if( lds ) begin // 1: UART STATUS
+		end else
+		// 4..7 stat register
+		if( addr[7:1] == 7'd2 ) begin
+			if( uds ) begin // 0: stat byte 3 (MSB)
+			end
+			if( lds ) begin // 1: stat byte 2
+			end
+			ack = 1'b1;
+		end else
+		if( addr[7:1] == 7'd3 ) begin
+			ack = 1'b1;
+			if( uds ) begin // 6: stat byte 1
+			end
+			if( lds ) begin // 7: stat byte 0 (LSB)
 				data_read[7:0] = status[7:0];
 				status_is_being_read = 1'b1;
-				ack = 1'b1;
 			end
 		end
-	end else begin // write to uart
+	end else begin // write to uart -->
+		// 0..3 rxtx register
 		if( addr[7:1] == 7'd0 ) begin
-			if( uds ) begin // 0: UART RXTX
+			if( uds ) begin // 0: rxtx byte 3 (MSB)
+			end
+			if( lds ) begin // 1: rxtx byte 2
+			end
+			ack = 1'b1;
+		end else
+		if( addr[7:1] == 7'd1 ) begin
+			if( uds ) begin // 2: rxtx byte 1
+				if( tx_active == 0 ) begin
+					ack = 1'b1;
+				end
+			end
+			if( lds ) begin // 3: rxtx byte 0 (LSB)
 				if( tx_active == 0 ) begin
 					tx_start = 1;
 					ack = 1'b1;
 				end
 			end
-			if( lds ) begin // 1: UART STATUS
-				ack = 1'b1;
+		end else
+		// 4..7 stat register
+		if( addr[7:1] == 7'd2 ) begin
+			if( uds ) begin // 4: stat byte 3 (MSB)
 			end
-		end // if( addr[7:0] == 8'd0 )
+			if( lds ) begin // 5: stat byte 2
+			end
+			ack = 1'b1;
+		end else
+		if( addr[7:1] == 7'd3 ) begin
+			if( uds ) begin // 6: stat byte 1
+			end
+			if( lds ) begin // 7: stat byte 0 (LSB)
+			end
+			ack = 1'b1;
+		end
 	end // write to uart
 end
 

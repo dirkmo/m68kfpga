@@ -1,0 +1,5 @@
+- Basic portieren
+- FAT Treiber
+- SD Card Treiber
+- printf, sprintf
+- Newlib fixen

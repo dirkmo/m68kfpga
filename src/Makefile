@@ -1,6 +1,6 @@
 INCS = -I/opt/m68k/m68k-elf/include/
 LIBS = -L /opt/m68k/m68k-elf/lib/m68000 -L /opt/m68k/lib/gcc/m68k-elf/5.2.0/m68000
-CFLAGS = -m68000 -os -fomit-frame-pointer -fno-builtin
+CFLAGS = -m68000 -os -fomit-frame-pointer -fno-builtin -g
 AFLAGS = -m68000
 
 bootstrap: bootstrap.c bs_crt0.o uart.o flash.o
@@ -25,6 +25,12 @@ timertest: timertest.c uart.o crt0.o
 	m68k-elf-ld $(LIBS) -Map=timertest.map -nostartfiles -T userprog.ld crt0.o uart.o timertest.o  -o timertest
 	m68k-elf-objcopy -O srec -S timertest timertest.hex
 
+spitest: spitest.c uart.o crt0.o
+	m68k-elf-gcc $(CFLAGS) $(INCS) -c spitest.c -o spitest.o
+	m68k-elf-ld $(LIBS) -Map=spitest.map -nostartfiles -T userprog.ld crt0.o uart.o spitest.o  -o spitest
+	m68k-elf-objcopy -O srec -S spitest spitest.hex
+
+	
 crt0.o: crt0.s
 	m68k-elf-as $(AFLAGS) crt0.s -o crt0.o
 

@@ -42,41 +42,93 @@ assign spi_cs_n[2:0] =	spi_cs_reg==1 ? 3'b110 :
 always @(posedge clk) begin
 	ack <= 1'b0;
 	start <= 0;
+	data_read[15:0] <= 0;
 	if( ~reset_n ) begin
-		//cpol <= 0;
-		//cpha <= 1;
 		clk_div <= 0;
 	end else
-	if( rw ) begin // read from spi
+	if( rw ) begin // read from spi -->
+		// 0..3 rxtx register
 		if( addr[7:1] == 7'd0 ) begin
-			if( uds ) begin // 0: RX REG
+			ack <= 1'b1;
+			if( uds ) begin // 0: rxtx byte 3 (MSB)
+			end
+			if( lds ) begin // 1: rxtx byte 2
+			end
+		end else
+		if( addr[7:1] == 7'd1 ) begin
+			if( uds ) begin // 2: rxtx byte 1
 				if( ~active ) begin
-					data_read[15:8] <= rx_reg[7:0];
 					ack <= 1'b1;
 				end
 			end
-			if( lds ) begin // 1: CTRL REG: CS_N[6:4], CLK_DIV[3:1], active
+			if( lds ) begin // 3: rxtx byte 0 (LSB)
+				if( ~active ) begin
+					data_read[7:0] <= rx_reg[7:0];
+					ack <= 1'b1;
+				end
+			end
+		end else
+		// 4..7 ctrl register
+		if( addr[7:1] == 7'd2 ) begin
+			ack <= 1'b1;
+			if( uds ) begin // 4: ctrl byte 3 (MSB)
+			end
+			if( lds ) begin // 5: ctrl byte 2
+			end
+		end else
+		if( addr[7:1] == 7'd3 ) begin
+			ack <= 1'b1;
+			if( uds ) begin // 6: ctrl byte 1
+			end
+			if( lds ) begin // 7: ctrl byte 0 (LSB)
 				data_read[7:0] <= { spi_cs_reg[2:0], clk_div[2:0], active };
-				ack <= 1'b1;
 			end
 		end
-	end else begin // write to spi
+	end else begin // write to spi -->
+		// 0..3 rxtx register
 		if( addr[7:1] == 7'd0 ) begin
-			if( uds ) begin // 0: TX REG
+			ack <= 1'b1;
+			if( uds ) begin // 0: rxtx byte 0 (MSB)
+			end
+			if( lds ) begin // 1: rxtx byte 1
+			end
+		end else
+		if( addr[7:1] == 7'd1 ) begin
+			if( uds ) begin // 2: rxtx byte 2
 				if( ~active ) begin
-					start <= 1;
-					tx_reg <= data_write[15:8];
 					ack <= 1'b1;
 				end
 			end
-			if( lds ) begin // 1: CTRL REG: CS_N[6:4], CLK_DIV[3:1], active
+			if( lds ) begin // 3: rxtx byte 3 (LSB)
+				if( ~active ) begin
+					start <= 1;
+					tx_reg <= data_write[7:0];
+					ack <= 1'b1;
+				end
+			end
+		end else
+		// 4..7 ctrl register
+		if( addr[7:1] == 7'd2 ) begin
+			ack <= 1;
+			if( uds ) begin // 0: ctrl byte 0 (MSB)
+			end
+			if( lds ) begin // 1: ctrl byte 1
+			end
+		end else
+		if( addr[7:1] == 7'd3 ) begin
+			if( uds ) begin // 2: ctrl byte 2
+				if( ~active ) begin
+					ack <= 1;
+				end
+			end
+			if( lds ) begin // 3: ctrl byte 3 (LSB)
 				if( ~active ) begin
 					clk_div[2:0] <= data_write[3:1];
 					spi_cs_reg[2:0] <= data_write[6:4];
 					ack <= 1'b1;
 				end
 			end
-		end // if( addr[7:0] == 8'd0 )
+		end
 	end
 end
 
@@ -110,6 +162,7 @@ always @(posedge clk) begin
 		case ( state_tx )
 			0: if( start ) begin
 				state_tx <= 'd1;
+				tx_out <= tx_reg[7];
 			end
 			1: begin
 					tx_out <= tx_reg[7]; // output Bit 7

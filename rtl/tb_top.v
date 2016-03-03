@@ -41,7 +41,8 @@ module tb_top;
 		.spi_miso(spi_miso),
 		.spi_mosi(spi_mosi),
 		.spi_clk(spi_clk),
-		.spi_cs_n(spi_cs_n)
+		.spi_cs_n(spi_cs_n),
+		.boot_sel(0)
 	);
 	
 	wire [31:0] ram_data_read;
@@ -119,16 +120,6 @@ module tb_top;
 	end
 	endtask
 
-	initial begin
-		#100;
-		while(resetzeit==0) #1;
-		#100;
-		uart_putc(65);
-		uart_putc(66);
-		uart_putc(67);
-		uart_putc(68);
-		uart_putc(69);
-	end
 	
 	initial begin
 		// Initialize Inputs
@@ -140,18 +131,19 @@ module tb_top;
 		uart_lds_reg = 0;
 		uart_rw = 1;
 
-		
-		while(resetzeit == 0) #1;
+		#100
+		reset = 0;
+		while(uut.computer.reset_n==0)#10;
 		
 		rx_avail_clear = 0;
-		reset = 0;
+		
 		
 		#20000;
 		$stop;
 		
 		while( 1 ) begin
 			while ( ~rx_avail ) #1;
-			$display("rx: %d (%c)", tbuart.rx_reg[7:0], tbuart.rx_reg[7:0] );
+			$display("rx: %c", tbuart.rx_reg[7:0] );
 			rx_avail_clear = 1; 
 			while ( rx_avail ) #1;
 			rx_avail_clear = 0;

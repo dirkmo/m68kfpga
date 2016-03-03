@@ -29,23 +29,24 @@ module top(
 	
 );
 
-	wire reset_n = ~reset;
-			
-	reg [1:0] counter;
+	reg [1:0] counter = 0;
 	always @(posedge clk_50mhz) counter <= counter + 1;
+
 	wire clk_25mhz = counter[0];
 	wire clk_12_5mhz = counter[1];
 
 
-	reg [23:0] blink_count;
+	reg [7:0] reset_count = 0;
+	wire reset_n = (reset_count == 8'hFF);
+
 	always @(posedge clk_12_5mhz) begin
 		if( reset )
-			blink_count <= 0;
-		else
-			blink_count <= blink_count + 1;
+			reset_count <= 0;
+		else if( reset_n ) begin
+		end else begin
+			reset_count <= reset_count + 1;
+		end
 	end
-	assign leds[7] = blink_count[23];
-
 
 	wire ram_data_is_output;
 	wire [31:0] ram_data_write;
@@ -63,7 +64,7 @@ module top(
 		 .reset_n(reset_n), 
 		 .tx(uart_tx), 
 		 .rx(uart_rx), 
-		 .leds(leds[/*7*/6:0]),
+		 .leds(leds[7:0]),
 		 .ram_addr(ram_addr), 
 		 .ram_data_read(ram_data), 
 		 .ram_data_write(ram_data_write), 
