@@ -25,6 +25,9 @@ typedef enum flash_cmd_t {
 #define FLASH_SEND(byte)	SPI_RXTX = byte
 #define FLASH_RECEIVE()		SPI_RXTX
 
+#define LED_ON	LEDS |= 0x01
+#define LED_OFF	LEDS &= 0xFE
+
 bool flash_is_busy(void) {
 	// select slave 1, clkdiv=1
 	FLASH_SELECT;
@@ -79,6 +82,7 @@ void flash_enable_write(void) {
 
 void flash_read( uint32_t addr, char *dst, uint32_t len ) {
 	while(flash_is_busy());
+	LED_ON;
 	FLASH_SELECT;
 	// Command
 	FLASH_SEND( FLASH_CMD_READ );
@@ -91,6 +95,7 @@ void flash_read( uint32_t addr, char *dst, uint32_t len ) {
 		*dst++ = FLASH_RECEIVE();
 	}
 	FLASH_DESELECT; // Deselect flash
+	LED_OFF;
 }
 
 void flash_disable_write(void) {
@@ -105,6 +110,7 @@ void flash_disable_write(void) {
 
 void flash_write_bytes( const uint8_t *bytes, uint32_t byte_count, uint32_t addr ) {
 	while(flash_is_busy());
+	LED_ON;
 	while(byte_count--) {
 		flash_enable_write();
 		// select slave 1, clkdiv=1
@@ -121,10 +127,12 @@ void flash_write_bytes( const uint8_t *bytes, uint32_t byte_count, uint32_t addr
 		while(flash_is_busy());
 	}
 	flash_disable_write();
+	LED_OFF;
 }
 
 void flash_write_words( const uint16_t *words, uint32_t word_count, uint32_t addr ) {
 	while(flash_is_busy());
+	LED_ON;
 	flash_enable_write();
 	// select slave 1, clkdiv=1
 	FLASH_SELECT;
@@ -150,6 +158,7 @@ void flash_write_words( const uint16_t *words, uint32_t word_count, uint32_t add
 		while(flash_is_busy());
 	}
 	flash_disable_write();
+	LED_OFF;
 }
 
 uint8_t flash_read_status(void) {
@@ -165,6 +174,7 @@ uint8_t flash_read_status(void) {
 
 void flash_erase_sector( uint32_t addr ) {
 	while(flash_is_busy());
+	LED_ON;
 	flash_enable_write();
 	FLASH_SELECT;
 	FLASH_SEND( FLASH_CMD_4K_ERASE );
@@ -172,6 +182,7 @@ void flash_erase_sector( uint32_t addr ) {
 	FLASH_SEND( ( addr >> 8 ) & 0xFF );
 	FLASH_SEND( addr & 0xFF );
 	FLASH_DESELECT; // Deselect flash
+	LED_OFF;
 }
 
 void flash_remove_bpl(void) {

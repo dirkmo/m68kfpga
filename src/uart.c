@@ -1,5 +1,7 @@
 #include "m68kdefs.h"
 #include "uart.h"
+#include <stdarg.h>
+#include <stdbool.h>
 
 static uint8_t echo_on = 0;
 static uint8_t overflow = 0;
@@ -124,4 +126,59 @@ void uart_write_hex(uint32_t num, uint8_t chars) {
     uint8_t buf[10];
     uint2hex(num, buf, chars);
     uart_puts(buf);
+}
+
+void uart_write_dec(uint32_t num) {
+	char s[14] = { 0 };
+	/*s[0] = '0' + (num%10);
+	num /= 10;
+	while( num ) {
+		s[0] = '0' + (num%10);
+		num /= 10;
+	}*/
+	uart_puts( s );
+}
+
+void uart_printf( const char *s, ... ) {
+	bool sym = false;
+	int num_len = 8;
+	va_list vl;
+	va_start( vl, s );
+	
+	for( ; *s ; s++ ) {
+		if( *s == '%' && !sym ) {
+			sym = true;
+			continue;
+		}
+		if( sym ) {
+			switch( *s ) {
+				case 'd': /* fall through*/
+				case 'i':
+					uart_write_dec( va_arg(vl, int) );
+					sym = false;
+					break;
+				case 'u':
+					uart_write_dec( va_arg(vl, unsigned int) );
+					sym = false;
+					break;
+				case 's':
+					uart_puts( va_arg(vl,char*) );
+					sym = false;
+					break;
+				case 'X':
+				case 'x':
+					uart_write_hex( va_arg(vl, unsigned int), num_len );
+					num_len = 8;
+					sym = false;
+					break;
+				case '1'...'9':
+					num_len = *s - '0';
+					break;
+				default: ;
+			}
+		} else {
+			uart_putc( *s );
+		}
+	}
+	va_end(vl);
 }

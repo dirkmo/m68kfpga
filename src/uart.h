@@ -23,4 +23,8 @@ void uart_puts(const uint8_t *str);
 uint8_t uart_read_hex(uint32_t *val);
 void uart_write_hex(uint32_t num, uint8_t chars);
 
+void uart_write_dec(uint32_t num);
+
+void uart_printf( const char *s, ... );
+
 #endif
