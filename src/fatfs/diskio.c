@@ -8,14 +8,11 @@
 /*-----------------------------------------------------------------------*/
 
 #include "diskio.h"		/* FatFs lower layer API */
-#include "usbdisk.h"	/* Example: Header file of existing USB MSD control module */
-#include "atadrive.h"	/* Example: Header file of existing ATA harddisk control module */
-#include "sdcard.h"		/* Example: Header file of existing MMC/SDC contorl module */
-
+#include "flash.h"
 /* Definitions of physical drive number for each drive */
-#define ATA		0	/* Example: Map ATA harddisk to physical drive 0 */
-#define MMC		1	/* Example: Map MMC/SD card to physical drive 1 */
-#define USB		2	/* Example: Map USB MSD to physical drive 2 */
+#define FLASH	0
+#define MMC		1
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -23,33 +20,24 @@
 /*-----------------------------------------------------------------------*/
 
 DSTATUS disk_status (
-	BYTE pdrv		/* Physical drive nmuber to identify the drive */
+	BYTE pdrv		/* Physical drive number to identify the drive */
 )
 {
 	DSTATUS stat;
-	int result;
+    uint8_t flash_status;
 
 	switch (pdrv) {
-	case ATA :
-		result = ATA_disk_status();
-
-		// translate the reslut code here
-
-		return stat;
+	case FLASH :
+		flash_status = flash_read_status();
+		if( flash_status & 0x3C) {
+            return STA_NOINIT | STA_PROTECT;
+		}
+		return 0;
 
 	case MMC :
-		result = MMC_disk_status();
+		//result = MMC_disk_status();
+		return STA_NOINIT;
 
-		// translate the reslut code here
-
-		return stat;
-
-	case USB :
-		result = USB_disk_status();
-
-		// translate the reslut code here
-
-		return stat;
 	}
 	return STA_NOINIT;
 }
@@ -68,26 +56,18 @@ DSTATUS disk_initialize (
 	int result;
 
 	switch (pdrv) {
-	case ATA :
-		result = ATA_disk_initialize();
+	case FLASH :
+		flash_remove_bpl();
 
-		// translate the reslut code here
-
-		return stat;
+		return 0;
 
 	case MMC :
-		result = MMC_disk_initialize();
+		//result = MMC_disk_initialize();
 
 		// translate the reslut code here
 
-		return stat;
+		return STA_NOINIT;
 
-	case USB :
-		result = USB_disk_initialize();
-
-		// translate the reslut code here
-
-		return stat;
 	}
 	return STA_NOINIT;
 }
@@ -109,32 +89,16 @@ DRESULT disk_read (
 	int result;
 
 	switch (pdrv) {
-	case ATA :
-		// translate the arguments here
+	case FLASH :
+        flash_read( sector * 0x1000, buff, count * 0x1000 );
 
-		result = ATA_disk_read(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
+		return RES_OK;
 
 	case MMC :
-		// translate the arguments here
+		//result = MMC_disk_read(buff, sector, count);
 
-		result = MMC_disk_read(buff, sector, count);
+		return RES_ERROR;
 
-		// translate the reslut code here
-
-		return res;
-
-	case USB :
-		// translate the arguments here
-
-		result = USB_disk_read(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
 	}
 
 	return RES_PARERR;
@@ -146,7 +110,6 @@ DRESULT disk_read (
 /* Write Sector(s)                                                       */
 /*-----------------------------------------------------------------------*/
 
-#if _USE_WRITE
 DRESULT disk_write (
 	BYTE pdrv,			/* Physical drive nmuber to identify the drive */
 	const BYTE *buff,	/* Data to be written */
@@ -158,73 +121,68 @@ DRESULT disk_write (
 	int result;
 
 	switch (pdrv) {
-	case ATA :
-		// translate the arguments here
-
-		result = ATA_disk_write(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
+	case FLASH :
+        flash_write_bytes(buff, count * 0x1000, sector * 0x1000 );
+		return 0;
 
 	case MMC :
 		// translate the arguments here
 
-		result = MMC_disk_write(buff, sector, count);
+		//result = MMC_disk_write(buff, sector, count);
 
 		// translate the reslut code here
 
-		return res;
+		return RES_ERROR;
 
-	case USB :
-		// translate the arguments here
-
-		result = USB_disk_write(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
 	}
 
 	return RES_PARERR;
 }
-#endif
 
 
 /*-----------------------------------------------------------------------*/
 /* Miscellaneous Functions                                               */
 /*-----------------------------------------------------------------------*/
 
-#if _USE_IOCTL
 DRESULT disk_ioctl (
 	BYTE pdrv,		/* Physical drive nmuber (0..) */
 	BYTE cmd,		/* Control code */
 	void *buff		/* Buffer to send/receive control data */
 )
 {
-	DRESULT res;
-	int result;
+	DRESULT res = RES_PARERR;
 
-	switch (pdrv) {
-	case ATA :
+    if( pdrv == FLASH ) {
+        switch( cmd ) {
+            case CTRL_SYNC:
+                res = RES_OK;
+                break;
+            case GET_SECTOR_COUNT:
+                *(DWORD*)buff = 0x400;
+                res = RES_OK;
+                break;
+            case GET_SECTOR_SIZE:
+                *(DWORD*)buff = 0x1000;
+                res = RES_OK;
+                break;
+            case GET_BLOCK_SIZE:
+                *(DWORD*)buff = 0x10;
+                res = RES_OK;
+                break;
+            case CTRL_TRIM:
+				{
+					DWORD *dp = (DWORD*)buff;
+					DWORD sec = dp[0];
+					DWORD last = dp[1];
+					while( sec <= last ) {
+						flash_erase_sector( sec++ );
+					}
+				}
+                break;
+            default: ;
+        }
+    }
 
-		// Process of the command for the ATA drive
 
-		return res;
-
-	case MMC :
-
-		// Process of the command for the MMC/SD card
-
-		return res;
-
-	case USB :
-
-		// Process of the command the USB drive
-
-		return res;
-	}
-
-	return RES_PARERR;
+	return res;
 }
-#endif

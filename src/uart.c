@@ -118,7 +118,7 @@ uint8_t uart_read_hex(uint32_t *val) {
     if(len==0) {
         return 0;
     }
-    *val = hex2uint(buf, len<<1);
+    *val = hex2uint((char*)buf, len<<1);
     return 1;
 }
 
@@ -129,14 +129,19 @@ void uart_write_hex(uint32_t num, uint8_t chars) {
 }
 
 void uart_write_dec(uint32_t num) {
+	int i;
+	int count = 1;
 	char s[14] = { 0 };
-	/*s[0] = '0' + (num%10);
+	s[0] = '0' + (num%10);
 	num /= 10;
 	while( num ) {
-		s[0] = '0' + (num%10);
+		s[count] = '0' + (num%10);
 		num /= 10;
-	}*/
-	uart_puts( s );
+		++count;
+	}
+	for( i=count-1; i>=0; i-- ) {
+		uart_putc( s[i] );
+	}
 }
 
 void uart_printf( const char *s, ... ) {
@@ -144,7 +149,7 @@ void uart_printf( const char *s, ... ) {
 	int num_len = 8;
 	va_list vl;
 	va_start( vl, s );
-	
+
 	for( ; *s ; s++ ) {
 		if( *s == '%' && !sym ) {
 			sym = true;
@@ -162,7 +167,7 @@ void uart_printf( const char *s, ... ) {
 					sym = false;
 					break;
 				case 's':
-					uart_puts( va_arg(vl,char*) );
+					uart_puts( va_arg(vl,uint8_t*) );
 					sym = false;
 					break;
 				case 'X':

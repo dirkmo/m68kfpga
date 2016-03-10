@@ -1,5 +1,5 @@
-INCS = -I/opt/m68k/m68k-elf/include/
-LIBS = -L /opt/m68k/m68k-elf/lib/m68000 -L /opt/m68k/lib/gcc/m68k-elf/5.2.0/m68000
+INCS = -I/opt/m68k/m68k-elf/include/ -I . -I ..
+LIBS = -L /opt/m68k/m68k-elf/lib/m68000 -L /opt/m68k/lib/gcc/m68k-elf/5.2.0/m68000 -L fatfs/
 CFLAGS = -m68000 -os -fomit-frame-pointer -fno-builtin -g
 AFLAGS = -m68000
 
@@ -15,9 +15,9 @@ bootstage1: bootstage1.c bs_crt0.o uart.o flash.o
 	m68k-elf-objcopy -O binary -S bootstage1 bootstage1.bin
 	../host/bin2verilog bootstage1.bin > bootstage1.v
 
-userprog: userprog.c uart.o crt0.o
+userprog: userprog.c uart.o crt0.o flash.o
 	m68k-elf-gcc $(CFLAGS) $(INCS) -c userprog.c -o userprog.o
-	m68k-elf-ld $(LIBS) -Map=userprog.map -nostartfiles -T userprog.ld crt0.o uart.o userprog.o  -o userprog
+	m68k-elf-ld $(LIBS) -Map=userprog.map -nostartfiles -T userprog.ld crt0.o uart.o flash.o userprog.o -lc -lgcc -o userprog
 	m68k-elf-objcopy -O srec -S userprog userprog.hex
 
 timertest: timertest.c uart.o crt0.o
@@ -33,6 +33,14 @@ spitest: spitest.c uart.o crt0.o
 flash_eraser: flash_eraser.o uart.o crt0.o flash.o
 	m68k-elf-ld $(LIBS) -Map=flash_eraser.map -nostartfiles -T userprog.ld crt0.o uart.o flash.o flash_eraser.o  -o flash_eraser
 	m68k-elf-objcopy -O srec -S flash_eraser flash_eraser.hex
+
+fattest: libfatfs.a crt0.o flash.o uart.o fattest.o
+	m68k-elf-ld $(LIBS) -Map=fatfs.map -nostartfiles -T userprog.ld crt0.o uart.o flash.o fattest.o -lfatfs -lgcc -o fattest
+	m68k-elf-objcopy -O srec -S fattest fattest.hex
+
+libfatfs.a: fatfs/diskio.o fatfs/ff.o
+	rm -f fatfs/libfatfs.a
+	m68k-elf-ar cr fatfs/libfatfs.a fatfs/diskio.o fatfs/ff.o
 
 crt0.o: crt0.s
 	m68k-elf-as $(AFLAGS) crt0.s -o crt0.o
