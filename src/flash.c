@@ -185,6 +185,32 @@ void flash_erase_sector( uint32_t addr ) {
 	LED_OFF;
 }
 
+void flash_erase_32k_block( uint32_t addr ) {
+	while(flash_is_busy());
+	LED_ON;
+	flash_enable_write();
+	FLASH_SELECT;
+	FLASH_SEND( FLASH_CMD_32K_ERASE );
+	FLASH_SEND( ( addr >> 16 ) & 0xFF );
+	FLASH_SEND( ( addr >> 8 ) & 0xFF );
+	FLASH_SEND( addr & 0xFF );
+	FLASH_DESELECT; // Deselect flash
+	LED_OFF;
+}
+
+void flash_erase_64k_block( uint32_t addr ) {
+	while(flash_is_busy());
+	LED_ON;
+	flash_enable_write();
+	FLASH_SELECT;
+	FLASH_SEND( FLASH_CMD_64K_ERASE );
+	FLASH_SEND( ( addr >> 16 ) & 0xFF );
+	FLASH_SEND( ( addr >> 8 ) & 0xFF );
+	FLASH_SEND( addr & 0xFF );
+	FLASH_DESELECT; // Deselect flash
+	LED_OFF;
+}
+
 void flash_remove_bpl(void) {
 	while(flash_is_busy());
 	flash_enable_write();

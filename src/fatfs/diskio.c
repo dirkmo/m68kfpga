@@ -13,6 +13,8 @@
 #define FLASH	0
 #define MMC		1
 
+// Die ersten 16 Sektoren für Bootloader reservieren
+#define SECTOR_OFFSET 0x10
 
 
 /*-----------------------------------------------------------------------*/
@@ -58,7 +60,6 @@ DSTATUS disk_initialize (
 	switch (pdrv) {
 	case FLASH :
 		flash_remove_bpl();
-
 		return 0;
 
 	case MMC :
@@ -90,7 +91,7 @@ DRESULT disk_read (
 
 	switch (pdrv) {
 	case FLASH :
-        flash_read( sector * 0x1000, buff, count * 0x1000 );
+        flash_read( (SECTOR_OFFSET + sector) * 0x1000, buff, count * 0x1000 );
 
 		return RES_OK;
 
@@ -98,7 +99,6 @@ DRESULT disk_read (
 		//result = MMC_disk_read(buff, sector, count);
 
 		return RES_ERROR;
-
 	}
 
 	return RES_PARERR;
@@ -122,7 +122,8 @@ DRESULT disk_write (
 
 	switch (pdrv) {
 	case FLASH :
-        flash_write_bytes(buff, count * 0x1000, sector * 0x1000 );
+		flash_erase_sector( (SECTOR_OFFSET + sector) * 0x1000 );
+        flash_write_words((uint16_t*)buff, count * 0x1000 / 2, (SECTOR_OFFSET + sector) * 0x1000 );
 		return 0;
 
 	case MMC :
@@ -158,11 +159,11 @@ DRESULT disk_ioctl (
                 res = RES_OK;
                 break;
             case GET_SECTOR_COUNT:
-                *(DWORD*)buff = 0x400;
+                *(DWORD*)buff = 0x400 - SECTOR_OFFSET;
                 res = RES_OK;
                 break;
             case GET_SECTOR_SIZE:
-                *(DWORD*)buff = 0x1000;
+                *(WORD*)buff = 0x1000;
                 res = RES_OK;
                 break;
             case GET_BLOCK_SIZE:
@@ -172,11 +173,25 @@ DRESULT disk_ioctl (
             case CTRL_TRIM:
 				{
 					DWORD *dp = (DWORD*)buff;
-					DWORD sec = dp[0];
-					DWORD last = dp[1];
+					DWORD sec = dp[0] + SECTOR_OFFSET;
+					DWORD last = dp[1] + SECTOR_OFFSET;
 					while( sec <= last ) {
-						flash_erase_sector( sec++ );
+						if( sec % 0x10 == 0 && (last-sec) >= 0x0F ) {
+							// 16 Blöcke auf einmal
+							flash_erase_64k_block(sec*0x1000 );
+							sec += 0x10;
+							continue;
+						}
+						if( sec % 0x08 == 0 && (last-sec) >= 0x07 ) {
+							// 8 Blöcke auf einmal
+							flash_erase_32k_block( sec*0x1000 );
+							sec += 0x08;
+							continue;
+						}
+						flash_erase_sector( (SECTOR_OFFSET + sec)*0x1000 );
+						sec++;
 					}
+					res = RES_OK;
 				}
                 break;
             default: ;
