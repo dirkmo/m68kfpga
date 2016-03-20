@@ -78,16 +78,15 @@ module tb_top;
 	wire uart_tx_active;
 	reg uart_clk;
 	
-	uart tbuart (
+	uart #(.SYS_CLK('d12_500_000),.BAUDRATE('d115200)) tbuart (
     .clk(uut.computer.clk), 
     .reset_n(~reset), 
     .rx(uart_tx), 
     .tx(uart_rx), 
-	 .addr(0),
+	 .addr(3),
 	 .rw(uart_rw),
 	 .uds(uart_uds_reg),
 	 .lds(uart_lds_reg),
-    .rx_avail(rx_avail), 
 	 .tx_active(uart_tx_active),
     .rx_avail_clear_i(rx_avail_clear),
 	 .data_write(uart_tx_reg[15:0])
@@ -111,11 +110,12 @@ module tb_top;
 	input [7:0] c;
 	begin
 		while( uart_tx_active ) #10;
-		uart_tx_reg[15:8] = c[7:0];
+		uart_tx_reg[7:0] = c[7:0];
 		uart_rw = 0;
-		uart_uds_reg = 1'b1; #10;
-		@(posedge uut.computer.clk); #10;
-		uart_uds_reg = 1'b0;
+		uart_lds_reg = 1'b1; #10;
+		//@(posedge uut.computer.clk); #10;
+		@(posedge tbuart.ack) #10;
+		uart_lds_reg = 1'b0;
 		uart_rw = 1;
 	end
 	endtask
@@ -136,21 +136,10 @@ module tb_top;
 		while(uut.computer.reset_n==0)#10;
 		
 		rx_avail_clear = 0;
+		uart_putc(65);
 		
 		
-		#20000;
-		$stop;
-		
-		while( 1 ) begin
-			while ( ~rx_avail ) #1;
-			$display("rx: %c", tbuart.rx_reg[7:0] );
-			rx_avail_clear = 1; 
-			while ( rx_avail ) #1;
-			rx_avail_clear = 0;
-			$stop;
-		end
-		
-		#3000;
+		#100000;
 		$finish;
 	end
       

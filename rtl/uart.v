@@ -17,8 +17,9 @@ module uart(
 
 		output tx_active,
 		
-		output wire rx_avail,
-		input rx_avail_clear_i
+		input rx_avail_clear_i,
+		
+		output [1:0] interrupt
     );
 
 parameter SYS_CLK = 'd25_000_000;
@@ -176,12 +177,14 @@ end
 
 
 reg [3:0] state_tx;
+reg tx_send_tick;
 
 assign tx_active = (state_tx != 0) || tx_start;
 
 always @(posedge clk) begin
 	state_tx <= state_tx;
 	tx <= tx;
+	tx_send_tick <= 0;
 	if( ~reset_n ) begin
 		tx_reg <= 0;
 		state_tx <= 0;
@@ -191,7 +194,7 @@ always @(posedge clk) begin
 				tx <= 1;
 				state_tx <= 0;
 				if( tx_start ) begin // start bit
-					tx_reg[7:0] <= data_write[15:8];
+					tx_reg[7:0] <= data_write[7:0];
 					tx <= 0;
 					state_tx <= 1;
 				end
@@ -270,6 +273,7 @@ always @(posedge clk) begin
 				tx <= 1;
 				if( tick ) begin
 					state_tx <= 0;
+					tx_send_tick <= 1;
 				end
 			end
 			default: begin
@@ -412,5 +416,7 @@ fifo fifo_rx (
 
 
 assign status[7:0] = { 5'd0, rx_overflow_flag, tx_active, ~fifo_empty };
+
+assign interrupt[1:0] = { tx_send_tick, rx_avail_tick };
 
 endmodule

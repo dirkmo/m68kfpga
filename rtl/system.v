@@ -40,8 +40,8 @@ module system(
 	wire [31:0] master_addr;
 	wire uds_n;
 	wire lds_n;
-	wire [2:0] ipl_n = 3'b111;
-	
+	wire [2:0] ipl_n;
+	wire as_n;
 	reg boot_sel_r;
 	
 	always@(posedge clk) begin
@@ -59,7 +59,7 @@ module system(
     .dtack( ~master_ack ), 
     .addr(master_addr), 
     .data_out(master_write), 
-    .as(), 
+    .as(as_n), 
     .uds(uds_n), 
     .lds(lds_n), 
     .rw(rw), 
@@ -103,6 +103,7 @@ module system(
 	wire [15:0] uart1_read;
 	wire [7:0] uart1_addr;
 	wire uart1_uds, uart1_lds;
+	wire [1:0] uart_interrupt;
 	
 	uart #(.SYS_CLK('d12_500_000),.BAUDRATE('d115200)) uart1
 	(
@@ -118,8 +119,8 @@ module system(
     .rw(rw), 
     .ack(uart1_ack), 
     .tx_active(uart1_tx_active), 
-    .rx_avail(uart1_rx_avail), 
-    .rx_avail_clear_i(1'b0)
+    .rx_avail_clear_i(1'b0),
+	 .interrupt(uart_interrupt[1:0])
     );
 
 	wire [15:0] leds_write;
@@ -176,14 +177,34 @@ module system(
 		.uds(timer_uds),
 		.lds(timer_lds),
 		.rw(rw),
-		.ack(timer_ack),
-		.overflow()
+		.ack(timer_ack)
 	);
 	
+	wire [1:0] interrupts = { uart_interrupt[1:0] };
+	wire [15:0] intctrl_write;
+	wire [15:0] intctrl_read;
+	wire [7:0] intctrl_addr;
+	wire intctrl_uds, intctrl_lds;
+	
+	intctrl intctrl1 (
+		.clk(clk), 
+		.reset_n(reset_n), 
+		.data_write(intctrl_write), 
+		.data_read(intctrl_read), 
+		.addr(intctrl_addr), 
+		.uds(intctrl_uds), 
+		.lds(intctrl_lds), 
+		.rw(rw), 
+		.ack(intctrl_ack), 
+		.as(~as_n),
+		.ipl_n(ipl_n), 
+		.interrupts( interrupts[1:0] )
+    );
 	
 	device_mux mux (
     .clk(clk), 
-    .reset_n(reset_n), 
+    .reset_n(reset_n),
+	 .as(~as_n),
     
 	 .master_write(master_write), 
     .master_read(master_read), 
@@ -225,9 +246,15 @@ module system(
     .slave5_addr(timer_addr), 
     .slave5_uds(timer_uds), 
 	 .slave5_lds(timer_lds), 
-    .slave5_ack(timer_ack)	
-	 
-    );
+    .slave5_ack(timer_ack),
+
+	 .slave6_read(intctrl_read), 
+    .slave6_write(intctrl_write), 
+    .slave6_addr(intctrl_addr), 
+    .slave6_uds(intctrl_uds), 
+	 .slave6_lds(intctrl_lds), 
+    .slave6_ack(intctrl_ack)
+   );
 
 
 	always @( posedge master_ack ) begin

@@ -1,14 +1,14 @@
 `timescale 1ns / 1ps
 
 module memory
-	#(DEPTH=17)
+	#(DEPTH=18)
 	(
 		input clk,
 		input reset_n,
 		
 		input [15:0] data_write,
 		output [15:0] data_read,
-		input [DEPTH:0] addr,
+		input [DEPTH-1:0] addr,
 		input uds, // 15:8, even address
 		input lds, // 7:0, odd address
 		input rw,
@@ -21,6 +21,8 @@ module memory
 	reg [15:0] mem[2**DEPTH-1:0];
 	
 	wire addr_valid = addr < 2**DEPTH;
+	
+	wire illegal = ~addr_valid && (lds || uds);
 	
 	wire l_acc = lds && addr_valid;
 	wire u_acc = uds && addr_valid;

@@ -59,7 +59,8 @@ entity TG68 is
         uds           : out std_logic;
         lds           : out std_logic;
         rw            : out std_logic;
-        drive_data    : out std_logic				--enable for data_out driver
+        drive_data    : out std_logic;				--enable for data_out driver
+		  state_out     : out std_logic_vector(1 downto 0)
         );
 end TG68;
  
@@ -105,7 +106,7 @@ ARCHITECTURE logic OF TG68 IS
  
  
 BEGIN  
- 
+	state_out <= state;
 	n_clk <= NOT clk;
  
 TG68_fast_inst: TG68_fast

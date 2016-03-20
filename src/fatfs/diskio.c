@@ -9,6 +9,8 @@
 
 #include "diskio.h"		/* FatFs lower layer API */
 #include "flash.h"
+#include "sdcard.h"
+
 /* Definitions of physical drive number for each drive */
 #define FLASH	0
 #define MMC		1
@@ -29,17 +31,18 @@ DSTATUS disk_status (
     uint8_t flash_status;
 
 	switch (pdrv) {
-	case FLASH :
-		flash_status = flash_read_status();
-		if( flash_status & 0x3C) {
-            return STA_NOINIT | STA_PROTECT;
+		case FLASH :
+			flash_status = flash_read_status();
+			if( flash_status & 0x3C) {
+				return STA_NOINIT | STA_PROTECT;
+			}
+			return 0;
+
+		case MMC :
+		{
+			stat = sdcard_disk_status(0 1);
+			return stat;
 		}
-		return 0;
-
-	case MMC :
-		//result = MMC_disk_status();
-		return STA_NOINIT;
-
 	}
 	return STA_NOINIT;
 }
@@ -55,20 +58,18 @@ DSTATUS disk_initialize (
 )
 {
 	DSTATUS stat;
-	int result;
 
 	switch (pdrv) {
-	case FLASH :
-		flash_remove_bpl();
-		return 0;
+		case FLASH :
+			flash_remove_bpl();
+			return 0;
 
-	case MMC :
-		//result = MMC_disk_initialize();
-
-		// translate the reslut code here
-
-		return STA_NOINIT;
-
+		case MMC :
+		{
+			stat = sdcard_disk_initialize(0 1);
+			uart_printf("disk init ret: %d\r\n", stat);
+			return stat;
+		}
 	}
 	return STA_NOINIT;
 }
@@ -92,13 +93,11 @@ DRESULT disk_read (
 	switch (pdrv) {
 	case FLASH :
         flash_read( (SECTOR_OFFSET + sector) * 0x1000, buff, count * 0x1000 );
-
 		return RES_OK;
 
 	case MMC :
-		//result = MMC_disk_read(buff, sector, count);
-
-		return RES_ERROR;
+		uart_printf("disk_read\r\n");
+		return sdcard_disk_read(0 1, buff, sector, count);
 	}
 
 	return RES_PARERR;
@@ -127,14 +126,8 @@ DRESULT disk_write (
 		return 0;
 
 	case MMC :
-		// translate the arguments here
-
-		//result = MMC_disk_write(buff, sector, count);
-
-		// translate the reslut code here
-
-		return RES_ERROR;
-
+		uart_printf("disk_write\r\n");
+		return sdcard_disk_write(0 1, buff, sector, count);
 	}
 
 	return RES_PARERR;
@@ -196,7 +189,12 @@ DRESULT disk_ioctl (
                 break;
             default: ;
         }
-    }
+    } else
+	if( pdrv == MMC ) {
+		res = sdcard_disk_ioctl(0 1, cmd, buff);
+		uart_printf("disk_ioctl ret: %d\r\n",res);
+		return res;
+	}
 
 
 	return res;

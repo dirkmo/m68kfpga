@@ -112,6 +112,11 @@ module boot_device(
 	always @(posedge clk) begin
 		boot_read[15:0] = 16'h0000;
 		if( bootmode ) begin
+			case( { addr[23:1], 1'b0 }  )
+				`include "../src/inttest.v"
+			endcase
+
+		/*
 			if(boot_sel == 0) begin
 				case( { addr[23:1], 1'b0 }  )
 					`include "../src/bootstrap.v"
@@ -121,6 +126,7 @@ module boot_device(
 					`include "../src/bootstage1.v"
 				endcase
 			end
+		*/
 		end else begin
 		end
 	end

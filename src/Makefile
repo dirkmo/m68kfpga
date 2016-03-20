@@ -30,6 +30,12 @@ spitest: spitest.c uart.o crt0.o
 	m68k-elf-ld $(LIBS) -Map=spitest.map -nostartfiles -T userprog.ld crt0.o uart.o spitest.o  -o spitest
 	m68k-elf-objcopy -O srec -S spitest spitest.hex
 
+inttest: inttest.c bs_crt0.o
+	m68k-elf-gcc $(CFLAGS) $(INCS) -c inttest.c -o inttest.o
+	m68k-elf-ld $(LIBS) -Map=inttest.map -nostartfiles -T bootstrap.ld bs_crt0.o inttest.o  -o inttest
+	m68k-elf-objcopy -O binary -S inttest inttest.bin
+	../host/bin2verilog inttest.bin > inttest.v
+
 flash_eraser: flash_eraser.o uart.o crt0.o flash.o
 	m68k-elf-ld $(LIBS) -Map=flash_eraser.map -nostartfiles -T userprog.ld crt0.o uart.o flash.o flash_eraser.o  -o flash_eraser
 	m68k-elf-objcopy -O srec -S flash_eraser flash_eraser.hex
@@ -38,9 +44,9 @@ fattest: libfatfs.a crt0.o flash.o uart.o fattest.o
 	m68k-elf-ld $(LIBS) -Map=fatfs.map -nostartfiles -T userprog.ld crt0.o uart.o flash.o fattest.o -lfatfs -lgcc -o fattest
 	m68k-elf-objcopy -O srec -S fattest fattest.hex
 
-libfatfs.a: fatfs/diskio.o fatfs/ff.o
+libfatfs.a: fatfs/diskio.o fatfs/ff.o fatfs/sdcard.o fatfs/sdcard.o
 	rm -f fatfs/libfatfs.a
-	m68k-elf-ar cr fatfs/libfatfs.a fatfs/diskio.o fatfs/ff.o
+	m68k-elf-ar cr fatfs/libfatfs.a fatfs/diskio.o fatfs/ff.o fatfs/sdcard.o
 
 crt0.o: crt0.s
 	m68k-elf-as $(AFLAGS) crt0.s -o crt0.o

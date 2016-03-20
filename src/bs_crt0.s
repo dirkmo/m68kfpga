@@ -26,6 +26,8 @@
 				movel #0, %d1
 				movel #0, %d0
 				
+				#movel #0, %usp
+				
 				#clear bss
 				moveal	#__bss_start, %a0
 				moveal	#__bss_end, %a1

@@ -468,10 +468,16 @@ PROCESS (clk, reset, clkena_in, opcode, rIPL_nr, longread, get_extendedOPC, mema
 					trap_vector(7 downto 0) <= X"2C";
 				END IF;	
 				IF trap_trap='1' THEN
-					trap_vector(7 downto 2) <= "10"&opcode(3 downto 0);
+--hier geändert -->
+					--trap_vector(7 downto 2) <= "10"&opcode(3 downto 0);
+					trap_vector(7 downto 0) <= "10"&opcode(3 downto 0)&"00";
+--hier geändert <--
 				END IF;	
 				IF interrupt='1' THEN
-					trap_vector(7 downto 2) <= "011"&rIPL_nr;
+--hier geändert -->
+				--	trap_vector(7 downto 2) <= "011"&rIPL_nr;
+					trap_vector(7 downto 0) <= "011"&rIPL_nr&"00";
+--hier geändert <--
 				END IF;	
 			END IF;
 		END IF;

@@ -10,9 +10,7 @@ module timer(
 		input uds,
 		input lds,
 		input rw,
-		output reg ack,
-		
-		output overflow
+		output reg ack
 );
 
 reg [31:0] cnt;
@@ -29,7 +27,7 @@ reg [31:0] timer;
 
 reg enable;
 
-assign overflow = enable && ( timer == cmp );
+wire overflow = enable && ( timer == cmp );
 
 
 wire [15:0] ctrl = { 8'd0, { 2'b00, clk_div[4:0], enable } };

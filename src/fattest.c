@@ -7,19 +7,19 @@ static FIL fil;  /* File object */
 
 void create_fs(void) {
     /* Register work area (do not care about error) */
-    f_mount(&fs, "0:", 0);
+    f_mount(&fs, "1:", 0);
 	/* Create FAT volume with default cluster size */
-    FRESULT res = f_mkfs("0:", 1/*sfd*/, 0);
+    FRESULT res = f_mkfs("1:", 1/*sfd*/, 0);
 	uart_printf("mkfs result = %d\r\n", res );
 }
 
 void mount(void) {
-	FRESULT res = f_mount(&fs, "0:", 1);
+	FRESULT res = f_mount(&fs, "1:", 1);
 	uart_printf("mount result = %d\r\n", res);
 }
 
 void create_file(void) {
-    FRESULT res = f_open(&fil, "hello.txt", FA_CREATE_NEW | FA_WRITE);
+    FRESULT res = f_open(&fil, "1:/hello.txt", FA_CREATE_NEW | FA_WRITE);
 	UINT bw;
     uart_printf("create result = %d\r\n", res);
 
@@ -32,7 +32,7 @@ void create_file(void) {
 
 void open_file(void) {
 	char line[82];
-    FRESULT res = f_open(&fil, "hello.txt", FA_READ);
+    FRESULT res = f_open(&fil, "1:/hello.txt", FA_READ);
 	uart_printf("open result = %d\r\n", res);
     /* Read all lines and display it */
     while (f_gets(line, sizeof line, &fil))
