@@ -136,6 +136,8 @@ module tb_top;
 		while(uut.computer.reset_n==0)#10;
 		
 		rx_avail_clear = 0;
+		
+		#10000;
 		uart_putc(65);
 		
 		

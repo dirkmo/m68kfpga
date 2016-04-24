@@ -96,7 +96,7 @@ always @(*) begin
 		end else
 		// Interrupts >= 0xFFFFFFF0
 		if( master_addr >= 32'hFFFF_FFF0 ) begin
-			int_ack <= 1'b1;
+			int_ack = 1'b1;
 		end
 	end
 end

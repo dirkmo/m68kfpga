@@ -272,9 +272,13 @@ always @(posedge clk) begin
 			11: begin
 				tx <= 1;
 				if( tick ) begin
-					state_tx <= 0;
-					tx_send_tick <= 1;
+					state_tx <= 12;
 				end
+			end
+			12: begin
+				tx <= 1;
+				tx_send_tick <= 1;
+				state_tx <= 0;
 			end
 			default: begin
 					state_tx <= 0;

@@ -58,7 +58,11 @@
 // Interrupt Controller
 #define INT_CTRL    (*((volatile uint32_t*)0x100400))
 #define INT_ENABLE  (*((volatile uint32_t*)0x100404))
-#define INT_MASK    (*((volatile uint32_t*)0x100408))
+#define INT_STATUS  (*((volatile uint32_t*)0x100408))
+
+#define INT_CTRL_ENABLE 1
+#define INT_UART_RX 1
+#define INT_UART_TX 2
 
 #endif
 

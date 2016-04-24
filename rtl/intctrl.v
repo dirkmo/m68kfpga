@@ -12,7 +12,6 @@ module intctrl(
 		input rw,
 		output reg ack,
 		input as,
-		input cpu_int,
 		
 		output [2:0] ipl_n,
 		
@@ -158,7 +157,7 @@ always @(posedge clk) begin : int_status_handling
 		int_status <= 0;
 	end else // interrupt registration
 	if( global_int_enable && (interrupts != 0) ) begin
-		int_status[interrupts] <= int_en[interrupts];
+		int_status[1:0] <= int_status[1:0] | (int_en[1:0] & interrupts[1:0]);
 	end else // int_status write
 	if( ~rw ) begin // write to interrupt status
 		// 8..11 interrupt status
@@ -193,8 +192,8 @@ end
 // ipl_n == 0: Auto Int 7 Vector at addr 0x7C NMI
 
 assign ipl_n[2:0] =	global_int_enable ?
-								int_status[0] ? 3'd6 :
-								int_status[1] ? 3'd6 :
+								int_masked[0] ? 3'd6 :
+								int_masked[1] ? 3'd6 :
 								3'b111
 							: 3'b111;
 
