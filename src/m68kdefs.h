@@ -61,8 +61,14 @@
 #define INT_STATUS  (*((volatile uint32_t*)0x100408))
 
 #define INT_CTRL_ENABLE 1
-#define INT_UART_RX 1
-#define INT_UART_TX 2
+
+#define INT_UART_RX		0x01
+#define INT_UART_TX		0x02
+#define INT_TIMER		0x04
+
+
+#define IRQ_DISABLE() { __asm__("ORI.W  #0x0070, %SR"); }
+#define IRQ_ENALBE()  { __asm__("ANDI.W #0xFF8F, %SR"); }
 
 #endif
 

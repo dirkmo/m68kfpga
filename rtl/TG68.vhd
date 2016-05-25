@@ -47,40 +47,39 @@ use ieee.std_logic_unsigned.all;
  
 entity TG68 is
    port(        
-		clk           : in std_logic;
-		reset         : in std_logic;
-        clkena_in     : in std_logic:='1';
-        data_in       : in std_logic_vector(15 downto 0);
-        IPL           : in std_logic_vector(2 downto 0):="111";
-        dtack         : in std_logic;
-        addr          : out std_logic_vector(31 downto 0);
-        data_out      : out std_logic_vector(15 downto 0);
-        as            : out std_logic;
-        uds           : out std_logic;
-        lds           : out std_logic;
-        rw            : out std_logic;
-        drive_data    : out std_logic;				--enable for data_out driver
-		  state_out     : out std_logic_vector(1 downto 0)
-        );
+		clk             : in std_logic;
+		reset           : in std_logic;
+		clkena_in     : in std_logic:='1';
+		data_in       : in std_logic_vector(15 downto 0);
+		IPL           : in std_logic_vector(2 downto 0):="111";
+		dtack         : in std_logic;
+		addr          : out std_logic_vector(31 downto 0);
+		data_out      : out std_logic_vector(15 downto 0);
+		as            : out std_logic;
+		uds           : out std_logic;
+		lds           : out std_logic;
+		rw            : out std_logic;
+		drive_data    : out std_logic				--enable for data_out driver
+	);
 end TG68;
  
 ARCHITECTURE logic OF TG68 IS
  
 	COMPONENT TG68_fast
-    PORT (
+   PORT (
         clk           : in std_logic;
         reset         : in std_logic;
         clkena_in     : in std_logic;
         data_in       : in std_logic_vector(15 downto 0);
-		IPL			  : in std_logic_vector(2 downto 0);
+		  IPL			    : in std_logic_vector(2 downto 0);
         test_IPL      : in std_logic;
         address       : out std_logic_vector(31 downto 0);
         data_write    : out std_logic_vector(15 downto 0);
         state_out     : out std_logic_vector(1 downto 0);
         decodeOPC     : buffer std_logic;
-		wr			  : out std_logic;
-		UDS, LDS	  : out std_logic
-        );
+		  wr		       : out std_logic;
+		  UDS, LDS	    : out std_logic
+	);
 	END COMPONENT;
  
  
@@ -95,36 +94,35 @@ ARCHITECTURE logic OF TG68 IS
    SIGNAL waitm       : std_logic;
    SIGNAL clkena_e    : std_logic;
    SIGNAL S_state     : std_logic_vector(1 downto 0);
-   SIGNAL decode	  : std_logic;
-   SIGNAL wr	      : std_logic;
-   SIGNAL uds_in	  : std_logic;
-   SIGNAL lds_in	  : std_logic;
+   SIGNAL decode	    : std_logic;
+   SIGNAL wr	       : std_logic;
+   SIGNAL uds_in	    : std_logic;
+   SIGNAL lds_in	    : std_logic;
    SIGNAL state       : std_logic_vector(1 downto 0);
-   SIGNAL clkena	  : std_logic;
-   SIGNAL n_clk		  : std_logic;
+   SIGNAL clkena	    : std_logic;
+   SIGNAL n_clk		 : std_logic;
    SIGNAL cpuIPL      : std_logic_vector(2 downto 0);
  
  
 BEGIN  
-	state_out <= state;
 	n_clk <= NOT clk;
  
 TG68_fast_inst: TG68_fast
 	PORT MAP (
 		clk => n_clk, 			-- : in std_logic;
-        reset => reset, 		-- : in std_logic;
-        clkena_in => clkena, 	-- : in std_logic;
-        data_in => data_in, 	-- : in std_logic_vector(15 downto 0);
+		reset => reset, 		-- : in std_logic;
+		clkena_in => clkena, 	-- : in std_logic;
+		data_in => data_in, 	-- : in std_logic_vector(15 downto 0);
 		IPL => cpuIPL, 			-- : in std_logic_vector(2 downto 0);
-        test_IPL => '0', 		-- : in std_logic;
-        address => addr, 		-- : out std_logic_vector(31 downto 0);
-        data_write => data_out, -- : out std_logic_vector(15 downto 0);
-        state_out => state, 	-- : out std_logic_vector(1 downto 0);
-        decodeOPC => decode, 	-- : buffer std_logic;
+		test_IPL => '0', 		-- : in std_logic;
+		address => addr, 		-- : out std_logic_vector(31 downto 0);
+		data_write => data_out, -- : out std_logic_vector(15 downto 0);
+		state_out => state, 	-- : out std_logic_vector(1 downto 0);
+		decodeOPC => decode, 	-- : buffer std_logic;
 		wr => wr, 				-- : out std_logic;
 		UDS => uds_in, 			-- : out std_logic;
 		LDS => lds_in 			-- : out std_logic;
-        );
+	);
  
 	PROCESS (clk)
 	BEGIN

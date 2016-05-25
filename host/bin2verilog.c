@@ -1,6 +1,7 @@
 ﻿#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 int main(int argc, char **argv) {
     if( argc < 2 ) {
@@ -25,15 +26,20 @@ int main(int argc, char **argv) {
 
     uint32_t pos = 0;
     unsigned char vals[width/8];
-
-    while( !feof(datei) ) {
-        fread( vals, sizeof( vals ), 1, datei );
+	int read;
+    while( 1 ) {
+		memset( vals, 0, sizeof(vals) );
+        read = fread( vals, 1, sizeof( vals ), datei );
+		if( read < 1 ) {
+			break;
+		}
         printf("32'h%08X: boot_read[%d:0] = %d'h", pos, width-1, width);
 		for( int i = 0; i < width/8; i++ ) {
 			printf("%02X", vals[i] );
 		}
 		printf(";\n");
-        pos+=sizeof( vals );
+	
+        pos += read;
     }
     return 0;
 }

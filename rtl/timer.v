@@ -10,7 +10,9 @@ module timer(
 		input uds,
 		input lds,
 		input rw,
-		output reg ack
+		output reg ack,
+		
+		output interrupt
 );
 
 reg [31:0] cnt;
@@ -28,7 +30,10 @@ reg [31:0] timer;
 reg enable;
 
 wire overflow = enable && ( timer == cmp );
+reg overflow_r;
+always @(posedge clk) overflow_r <= overflow;
 
+assign interrupt = { overflow_r, overflow } == 2'b01;
 
 wire [15:0] ctrl = { 8'd0, { 2'b00, clk_div[4:0], enable } };
 
@@ -37,8 +42,6 @@ wire [6:0] addr7 = addr[7:1];
 always @(posedge clk) begin
 	ack <= 1'b0;
 	if( ~reset_n ) begin
-		//cpol <= 0;
-		//cpha <= 1;
 		clk_div <= 0;
 		cmp <= 0;
 		enable <= 0;

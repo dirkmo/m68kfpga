@@ -167,6 +167,7 @@ module system(
 	wire [15:0] timer_read;
 	wire [7:0] timer_addr;
 	wire timer_uds, timer_lds;
+	wire timer_interrupt;
 	
 	timer timer1 (
 		.clk(clk),
@@ -177,10 +178,11 @@ module system(
 		.uds(timer_uds),
 		.lds(timer_lds),
 		.rw(rw),
-		.ack(timer_ack)
+		.ack(timer_ack),
+		.interrupt(timer_interrupt)
 	);
 	
-	wire [1:0] interrupts = { uart_interrupt[1:0] };
+	wire [1:0] interrupts = { uart_interrupt[1:0], timer_interrupt };
 	wire [15:0] intctrl_write;
 	wire [15:0] intctrl_read;
 	wire [7:0] intctrl_addr;
@@ -198,7 +200,7 @@ module system(
 		.ack(intctrl_ack), 
 		.as(~as_n),
 		.ipl_n(ipl_n), 
-		.interrupts( interrupts[1:0] )
+		.interrupts( interrupts )
     );
 	
 	device_mux mux (

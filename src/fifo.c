@@ -1,8 +1,5 @@
 #include "fifo.h"
-
-#define IRQ_DISABLE()
-#define IRQ_ENALBE()
-
+#include "m68kdefs.h"
 
 void fifo_init(FIFO *fifo, uint8_t len, char *buf, uint8_t item_size) {
 	fifo->first = 0;
@@ -54,21 +51,22 @@ bool fifo_pop(FIFO *fifo, char *item) {
 }
 
 bool fifo_is_empty(const FIFO *fifo) {
-  bool empty;
-  IRQ_DISABLE();
+	bool empty;
+	IRQ_DISABLE();
 
-  empty = fifo->count == 0;
+	empty = fifo->count == 0;
 
-  IRQ_ENALBE();
-  return empty;
+	IRQ_ENALBE();
+	return empty;
 }
 
 bool fifo_is_full(const FIFO *fifo) {
-  bool full;
-  IRQ_DISABLE();
+	bool full;
+	IRQ_DISABLE();
 
-  full = fifo->count == fifo->len;
 
-  IRQ_ENALBE();
-  return full;
+	full = fifo->count == fifo->len;
+
+	IRQ_ENALBE();
+	return full;
 }

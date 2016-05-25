@@ -19,7 +19,7 @@ static FIFO fifo_tx = {
 };
 
 
-void __attribute__ ((interrupt)) interrupt2(void)
+void __attribute__ ((interrupt)) interrupt_uart(void)
 {
 	// potentiell müssen noch d0/d1, a0/a1 gepusht und ge-pop't werden.
 	if( INT_STATUS & INT_UART_RX ) {
@@ -27,18 +27,25 @@ void __attribute__ ((interrupt)) interrupt2(void)
 			//char ch = UART_RXTX;
 			fifo_push( &fifo_rx, UART_RXTX );
 		}
+		INT_STATUS &= ~INT_UART_RX;
 	}
 	if( INT_STATUS & INT_UART_TX ) {
-		if( !fifo_is_empty(&fifo_tx) ) {
-			char ch;
-			fifo_pop( &fifo_tx, &ch );
-			UART_RXTX = ch;
-		}
+		//if( (UART_STAT & UART_MASK_TXACTIVE) == 0 ) {
+			if( !fifo_is_empty(&fifo_tx) ) {
+				char ch;
+				fifo_pop( &fifo_tx, &ch );
+				UART_RXTX = ch;
+			}
+		//}
 		//UART_RXTX = '0' + INT_STATUS;
+		INT_STATUS &= ~INT_UART_TX;
 	}
-	INT_STATUS &= ~INT_UART_RX & ~INT_UART_TX;
 }
 
+void __attribute__ ((interrupt)) interrupt_timer(void) {
+	UART_RXTX = '.';
+	INT_STATUS &= ~INT_TIMER;
+}
 
 typedef enum intvector_t {
 	INTVEC_SSP = 0,
@@ -101,16 +108,23 @@ void print_int( const char *s ) {
 int main(void) {
 	BOOTMODE_END();
 	INT_STATUS = 0;
-	register_int( INTVEC_AUTO1, interrupt2 );
+	register_int( INTVEC_AUTO1, interrupt_uart );
+	register_int( INTVEC_AUTO2, interrupt_timer );
+	
+	TIMER_CNT = 0;
+	TIMER_CMP = 12500000 / 2;
+	TIMER_CTRL = TIMER_CTRL_MASK_ENABLE;
+	
 	INT_CTRL = INT_CTRL_ENABLE;
-	INT_ENABLE = INT_UART_RX | INT_UART_TX;
-	__asm__("ORI.W  #0xF000, %SR"); // Put in new IPL bits
-	__asm__("ANDI.W #0xF000, %SR"); // Mask off old IPL bits
+	INT_ENABLE = INT_UART_RX | INT_UART_TX | INT_TIMER;
+	
+//	__asm__("ORI.W  #0xF000, %SR"); // Put in new IPL bits
+//	__asm__("ANDI.W #0xF000, %SR"); // Mask off old IPL bits
+	
+	IRQ_ENALBE();
 	
 	print_int("Hallo Welt!\n");
 	
-	while( !fifo_is_empty( &fifo_tx) );
-	INT_ENABLE = INT_UART_RX;
 	char ch;
 	while(1) {
 		if( !fifo_is_empty( &fifo_rx ) ) {
